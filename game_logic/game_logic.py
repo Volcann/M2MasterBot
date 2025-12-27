@@ -1,64 +1,131 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
 import random
+from queue import Queue
+
 
 class GameLogic:
     def __init__(self):
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
-        
+
     def random_value(self):
-        existing_values = set()
+        max_value = 2
+
         for i in range(GRID_LENGTH):
             for j in range(GRID_WIDTH):
                 if self._matrix[i][j] != 0:
-                    existing_values.add(self._matrix[i][j])
-    
-        if not existing_values:
+                    max_value = max(max_value, self._matrix[i][j])
+
+        if max_value == 2:
             return random.choice([2, 4])
-        
-        return random.choice(list(existing_values))
-    
+
+        min_value = 2
+        random_choice = set()
+        while True:
+            if min_value > max_value:
+                break
+            random_choice.add(min_value)
+            min_value *= 2
+        random_choice = sorted(list(random_choice))
+        print(random_choice)
+        options = list(random_choice)
+        if random.random() < 0.9:  # 70% chance to exclude last
+            options = options[:-1]
+        return random.choice(options)
+
     def print_matrix(self):
         for row in self._matrix:
             print(row)
         print()
-    
-    def add_to_colomn(self, value, colomn):
-        i = 0
-        while True:
-            if i == GRID_LENGTH:
-                print("Colomn is already full")
-                break
-            
-            if self._matrix[i][colomn] == 0:
-                self._matrix[i][colomn] = value
-                self.merge(i ,colomn)
-                break
-            else:
-                i+=1
-        return
-    
-    def merge(self, row, col):
-        value = self._matrix[row][col]
-        if value == 0:
+
+    def rearrange(self, column=None):
+        if column is None:
+            for col_index in range(GRID_WIDTH):
+                self.rearrange(col_index)
             return
 
-        directions = [
-            (1, 0),   # down
-            (-1, 0),  # up
-            (0, 1),   # right
-            (0, -1),  # left
-        ]
+        index = 0
+        total_non_zero_values = 0
 
-        for dr, dc in directions:
-            r, c = row + dr, col + dc
+        queue = Queue()
+        while index < GRID_LENGTH:
+            if self._matrix[index][column] != 0:
+                queue.put(self._matrix[index][column])
+                total_non_zero_values += 1
+            index += 1
 
-            if 0 <= r < GRID_LENGTH and 0 <= c < GRID_WIDTH:
-                if self._matrix[r][c] == value:
-                    self._matrix[row][col] *= 2
-                    self._score += self._matrix[row][col]
-                    self._matrix[r][c] = 0
-                    return  # merge only once
-                
+        index = 0
+        preserve_total_non_zero_values = total_non_zero_values
+        while total_non_zero_values > 0:
+            self._matrix[index][column] = queue.get()
+            total_non_zero_values -= 1
+            index += 1
+
+        index = preserve_total_non_zero_values
+        while index < GRID_LENGTH:
+            self._matrix[index][column] = 0
+            index += 1
+        return
+
+    def add_to_column(self, value, column):
+        index = 0
+        while True:
+            if index == GRID_LENGTH:
+                print("Column is already full")
+                break
+
+            if self._matrix[index][column] == 0:
+                self._matrix[index][column] = value
+                while True:
+                    if not self.merge_column(column):
+                        break
+                    self.rearrange(column)
+                break
+            else:
+                index += 1
+            self.rearrange()
+        return
+
+    def merge_column(self, col_index):
+        merged_any = False
+
+        while True:
+            merged_this_pass = False
+
+            for row_index in range(GRID_LENGTH):
+                current_value = self._matrix[row_index][col_index]
+                if current_value == 0:
+                    continue
+
+                for delta_row in [-1, 1]:
+                    neighbor_row = row_index + delta_row
+                    if (
+                        0 <= neighbor_row < GRID_LENGTH
+                        and self._matrix[neighbor_row][col_index] == current_value
+                    ):
+                        self._matrix[row_index][col_index] *= 2
+                        self._score += self._matrix[row_index][col_index]
+                        self._matrix[neighbor_row][col_index] = 0
+                        merged_this_pass = True
+
+                for delta_col in [-1, 1]:
+                    neighbor_col = col_index + delta_col
+                    if (
+                        0 <= neighbor_col < GRID_WIDTH
+                        and self._matrix[row_index][neighbor_col] == current_value
+                    ):
+                        self._matrix[row_index][col_index] *= 2
+                        self._score += self._matrix[row_index][col_index]
+                        self._matrix[row_index][neighbor_col] = 0
+                        merged_this_pass = True
+
+            self.rearrange(col_index)
+
+            if not merged_this_pass:
+                break
+            merged_any = True
+
+        return merged_any
+
     def get_score(self):
         return self._score
