@@ -29,9 +29,11 @@ class GameLogic:
         random_choice = sorted(list(random_choice))
 
         options = list(random_choice)
-        if random.random() < 0.9:
+        if random.random() < 0.95:
             options = options[:-1]
-        return random.choice(options)
+        value = random.choice(options)
+        print("Random value:", value)
+        return value
 
     def print_matrix(self):
         for row in self._matrix:
@@ -88,13 +90,13 @@ class GameLogic:
             if self._matrix[index][column] == 0:
                 self._matrix[index][column] = value
                 while self.merge_column(column):
-                    self.rearrange(column)
+                    self.rearrange()
                 break
             else:
                 index += 1
-        self.rearrange()
-        self.merge_column(column)
-        self.rearrange()
+        for i in range(GRID_WIDTH):
+            while self.merge_column(i):
+                self.rearrange()
         self.print_matrix()
         return True
 
