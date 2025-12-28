@@ -1,7 +1,7 @@
 import pygame
 from config.constants import (
-    CELL_SIZE, MARGIN, BG_COLOR,
-    CELL_COLOR, TEXT_COLOR,
+    CELL_SIZE, MARGIN,
+    CELL_COLOR,
     FONT_SIZE, SCORE_FONT_SIZE,
     NEXT_FONT_SIZE, GRID_LENGTH,
     GRID_WIDTH
@@ -9,7 +9,6 @@ from config.constants import (
 
 
 class GameUI:
-    # M2-like color palette
     COLORS = {
         0: (25, 25, 25),        # empty
         2: (66, 133, 244),     # blue
@@ -49,8 +48,12 @@ class GameUI:
         pygame.display.set_caption("M2 Block")
 
         self.font = pygame.font.SysFont("Arial", FONT_SIZE, bold=True)
-        self.score_font = pygame.font.SysFont("Arial", SCORE_FONT_SIZE, bold=True)
-        self.next_font = pygame.font.SysFont("Arial", NEXT_FONT_SIZE, bold=True)
+        self.score_font = pygame.font.SysFont(
+            "Arial", SCORE_FONT_SIZE, bold=True
+        )
+        self.next_font = pygame.font.SysFont(
+            "Arial", NEXT_FONT_SIZE, bold=True
+        )
 
         self.clock = pygame.time.Clock()
         self.input_column = None
@@ -69,8 +72,6 @@ class GameUI:
 
     def draw_matrix(self):
         self.screen.fill(self.BG_DARK)
-
-        # Grid background
         grid_rect = pygame.Rect(
             MARGIN,
             self.top_padding,
@@ -98,13 +99,16 @@ class GameUI:
                 if value != 0:
                     font = self.font
                     if value >= 512:
-                        font = pygame.font.SysFont("Arial", FONT_SIZE - 6, bold=True)
+                        font = pygame.font.SysFont(
+                            "Arial", FONT_SIZE - 6, bold=True
+                        )
 
-                    text_surface = font.render(str(value), True, self.TEXT_LIGHT)
+                    text_surface = font.render(
+                        str(value), True, self.TEXT_LIGHT
+                    )
                     text_rect = text_surface.get_rect(center=rect.center)
                     self.screen.blit(text_surface, text_rect)
 
-        # Score (Top Center)
         score_surface = self.score_font.render(
             f"Score {self.game_logic.get_score()}",
             True,
@@ -114,8 +118,6 @@ class GameUI:
             score_surface,
             score_surface.get_rect(center=(self.window_width // 2, 30))
         )
-
-        # Next block tile (Bottom Center)
         next_rect = pygame.Rect(
             (self.window_width - CELL_SIZE) // 2,
             self.window_height - CELL_SIZE - 25,
@@ -125,12 +127,13 @@ class GameUI:
         next_color = self.COLORS.get(self.next_value, CELL_COLOR)
         self.draw_rounded_rect(self.screen, next_color, next_rect, 14)
 
-        next_text = self.font.render(str(self.next_value), True, self.TEXT_LIGHT)
+        next_text = self.font.render(
+            str(self.next_value), True, self.TEXT_LIGHT
+        )
         self.screen.blit(
             next_text,
             next_text.get_rect(center=next_rect.center)
         )
-
         self.draw_temp_message()
         pygame.display.flip()
 
@@ -164,7 +167,9 @@ class GameUI:
         text = font.render("GAME OVER", True, (255, 80, 80))
         self.screen.blit(
             text,
-            text.get_rect(center=(self.window_width // 2, self.window_height // 2))
+            text.get_rect(center=(
+                self.window_width // 2, self.window_height // 2
+            ))
         )
         pygame.display.flip()
 
@@ -172,11 +177,16 @@ class GameUI:
         if not self.temp_message:
             return
 
-        if pygame.time.get_ticks() - self.temp_message_time > self.temp_message_duration:
+        if (
+            pygame.time.get_ticks() -
+            self.temp_message_time > self.temp_message_duration
+        ):
             self.temp_message = None
             return
 
-        msg_surface = self.font.render(self.temp_message, True, (255, 120, 120))
+        msg_surface = self.font.render(
+            self.temp_message, True, (255, 120, 120)
+        )
         self.screen.blit(
             msg_surface,
             msg_surface.get_rect(
@@ -192,20 +202,22 @@ class GameUI:
             show_message = False
 
             if not game_is_over and self.input_column is not None:
+                print("Input column:", self.input_column)
                 if not self.game_logic.add_to_column(
                     self.next_value, self.input_column
                 ):
                     show_message = True
+                    self.game_logic.merge_column(self.input_column)
+                    self.game_logic.rearrange()
                 else:
                     self.next_value = self.game_logic.random_value()
                     self.input_column = None
-
             if show_message:
                 self.show_temp_message("Column is full")
 
             if self.game_logic.game_over(self.next_value):
                 game_is_over = True
                 self.draw_game_over()
-
+            self.game_logic.rearrange()
             self.draw_matrix()
             self.clock.tick(30)
