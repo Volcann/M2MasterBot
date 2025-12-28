@@ -27,9 +27,9 @@ class GameLogic:
             random_choice.add(min_value)
             min_value *= 2
         random_choice = sorted(list(random_choice))
-        print(random_choice)
+
         options = list(random_choice)
-        if random.random() < 0.9:  # 70% chance to exclude last
+        if random.random() < 0.9:
             options = options[:-1]
         return random.choice(options)
 
@@ -67,26 +67,38 @@ class GameLogic:
             index += 1
         return
 
+    def can_merge_last_row(self, column, value):
+        last_row = GRID_LENGTH - 1
+        return self._matrix[last_row][column] == value
+
     def add_to_column(self, value, column):
         index = 0
         while True:
             if index == GRID_LENGTH:
-                print("Column is already full")
-                break
+                if self.can_merge_last_row(column, value):
+                    self._matrix[GRID_LENGTH - 1][column] *= 2
+                    self._score += self._matrix[GRID_LENGTH - 1][column]
+                    while self.merge_column(column):
+                        self.rearrange(column)
+                    return True
+                else:
+                    print("Column is already full")
+                    return False
 
             if self._matrix[index][column] == 0:
                 self._matrix[index][column] = value
-                while True:
-                    if not self.merge_column(column):
-                        break
+                while self.merge_column(column):
                     self.rearrange(column)
                 break
             else:
                 index += 1
-            self.rearrange()
-        return
+        self.rearrange()
+        self.merge_column(column)
+        self.rearrange()
+        self.print_matrix()
+        return True
 
-    def merge_column(self, col_index):
+    def merge_column(self, col_index, value=None):
         merged_any = False
 
         while True:
@@ -101,7 +113,8 @@ class GameLogic:
                     neighbor_row = row_index + delta_row
                     if (
                         0 <= neighbor_row < GRID_LENGTH
-                        and self._matrix[neighbor_row][col_index] == current_value
+                        and
+                        self._matrix[neighbor_row][col_index] == current_value
                     ):
                         self._matrix[row_index][col_index] *= 2
                         self._score += self._matrix[row_index][col_index]
@@ -112,7 +125,8 @@ class GameLogic:
                     neighbor_col = col_index + delta_col
                     if (
                         0 <= neighbor_col < GRID_WIDTH
-                        and self._matrix[row_index][neighbor_col] == current_value
+                        and
+                        self._matrix[row_index][neighbor_col] == current_value
                     ):
                         self._matrix[row_index][col_index] *= 2
                         self._score += self._matrix[row_index][col_index]
@@ -129,3 +143,15 @@ class GameLogic:
 
     def get_score(self):
         return self._score
+
+    def game_over(self, value):
+        for i in range(GRID_WIDTH):
+            for j in range(GRID_LENGTH):
+                if self._matrix[j][i] == 0:
+                    return False
+
+        for i in range(GRID_LENGTH):
+            if self._matrix[(GRID_WIDTH - 1)][i] == value:
+                return False
+
+        return True

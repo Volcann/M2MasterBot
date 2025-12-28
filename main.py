@@ -1,35 +1,7 @@
-import os
 from game_logic.game_logic import GameLogic
-
-
-def clear_terminal():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
+from game_ui.game_ui import GameUI
 
 if __name__ == "__main__":
     game_logic = GameLogic()
-    game_logic.print_matrix()
-
-    while True:
-        try:
-            value = game_logic.random_value()
-            print("Number: ")
-            print(value)
-
-            column = int(
-                input(
-                    f"Enter column (0-{len(game_logic._matrix[0]) - 1}): "
-                )
-            )
-
-            game_logic.add_to_column(
-                value=value,
-                column=column
-            )
-            clear_terminal()
-            game_logic.rearrange()
-            game_logic.print_matrix()
-            print(f"Score: {game_logic.get_score()}\n")
-
-        except (ValueError, IndexError):
-            print("Invalid input! Try again.")
+    game_ui = GameUI(game_logic)
+    game_ui.run()
