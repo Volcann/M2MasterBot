@@ -183,11 +183,11 @@ class GameLogic:
         if count == 2:
             value *= 2 
             self._matrix[row][column] = value
-            self._score = value
+            self._score += value
         elif count > 2:
             value *= 4 
             self._matrix[row][column] = value
-            self._score = value
+            self._score += value
         else:
             return False
 
