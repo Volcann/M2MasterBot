@@ -4,10 +4,10 @@ from queue import Queue
 class GameLogic:
     def __init__(self):
         self._matrix = [
-          [0, 0, 4, 0],
-          [0, 0, 4, 0],
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
+          [4, 8, 0, 0],
+          [2, 0, 4, 4],
+          [2, 0, 4, 0],
+          [8, 0, 0, 0],
         ]
 
     def print_matrix(self):
@@ -70,7 +70,6 @@ class GameLogic:
                     continue
                 if self.check_value(j, column, value):
                     return True
-
         return False
 
     def check_value(self, row, column, value):
