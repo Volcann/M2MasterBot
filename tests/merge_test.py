@@ -1,99 +1,132 @@
 from queue import Queue
-GRID_LENGTH = 4
-GRID_WIDTH = 4
 
 
-class MergeTester:
-    def __init__(self, matrix):
-        self._matrix = matrix
-        self._score = 0
+class GameLogic:
+    def __init__(self):
+        self._matrix = [
+          [0, 0, 4, 0],
+          [0, 0, 4, 4],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ]
 
-    def print_matrix(self, title=""):
-        if title:
-            print(title)
-        for row in self._matrix:
-            print(row)
-        print("-" * 30)
+    def print_matrix(self):
+        for i in self._matrix:
+            print(i)
 
-    def rearrange(self, column):
-        queue = Queue()
+    def rearrange(self, column=None):
+        if column is None:
+            for i in range(4):
+                queue = Queue()
+                non_zero_value = 0
 
-        for r in range(GRID_LENGTH):
-            if self._matrix[r][column] != 0:
-                queue.put(self._matrix[r][column])
+                for j in range(4):
+                    if self._matrix[j][i] == 0:
+                        continue
+                    else:
+                        queue.put(self._matrix[j][i])
 
-        r = 0
-        while not queue.empty():
-            self._matrix[r][column] = queue.get()
-            r += 1
+                for j in range(4):
+                    self._matrix[j][i] = 0
 
-        while r < GRID_LENGTH:
-            self._matrix[r][column] = 0
-            r += 1
+                non_zero_value = queue.qsize()
+                for j in range(non_zero_value):
+                    value = queue.get()
+                    if value > 0:
+                        self._matrix[j][i] = value
+        else:
+            queue = Queue()
+            non_zero_value = 0
 
-    def merge_column(self, col_index):
-        merged_any = False
-
-        while True:
-            merged_this_pass = False
-
-            for row_index in range(GRID_LENGTH):
-                current_value = self._matrix[row_index][col_index]
-                if current_value == 0:
+            for i in range(4):
+                if self._matrix[i][column] == 0:
                     continue
+                else:
+                    queue.put(self._matrix[i][column])
 
-                for delta_row in [-1, 1]:
-                    nr = row_index + delta_row
-                    if (
-                        0 <= nr < GRID_LENGTH
-                        and
-                        self._matrix[nr][col_index] == current_value
-                    ):
-                        self._matrix[row_index][col_index] *= 2
-                        self._score += self._matrix[row_index][col_index]
-                        self._matrix[nr][col_index] = 0
-                        merged_this_pass = True
+            for i in range(4):
+                self._matrix[i][column] = 0
 
-                for delta_col in [-1, 1]:
-                    nc = col_index + delta_col
-                    if (
-                        0 <= nc < GRID_WIDTH
-                        and
-                        self._matrix[row_index][nc] == current_value
-                    ):
-                        self._matrix[row_index][col_index] *= 2
-                        self._score += self._matrix[row_index][col_index]
-                        self._matrix[row_index][nc] = 0
-                        merged_this_pass = True
+            non_zero_value = queue.qsize()
+            for i in range(non_zero_value):
+                value = queue.get()
+                if value > 0:
+                    self._matrix[i][column] = value
+        return
 
-            self.rearrange(col_index)
+    def merge(self, column=-1):
+        if column == -1:
+            for i in range(4):
+                for j in range(4):
+                    value = self._matrix[j][i]
+                    if value == 0:
+                        continue
+                    if self.check_value(j, i, value):
+                        return True
+        else:
+            for j in range(4):
+                value = self._matrix[j][column]
+                if value == 0:
+                    continue
+                if self.check_value(j, column, value):
+                    return True
 
-            if not merged_this_pass:
-                break
+        return False
 
-            merged_any = True
-        return merged_any
+    def check_value(self, row, column, value):
+        indexes = [
+            (-1, 0),
+            (0, -1),
+            (1,  0),
+            (0,  1)
+        ]
+        count = 1
+        visited = set()
+
+        for (i, j) in indexes:
+            new_row = row+i
+            new_column = column+j
+            if 0 <= new_row < 4 and 0 <= new_column < 4:
+                if ((new_row, new_column)) not in visited:
+                    visited.add((new_row, new_column))
+                    if self._matrix[new_row][new_column] == value:
+                        print("EXIST", new_row, new_column)
+                        print()
+                        self._matrix[new_row][new_column] = 0
+                        count += 1
+                        for (i, j) in indexes:
+                            sec_new_row = new_row+i
+                            sec_new_column = new_column+j
+                            if 0 <= sec_new_row < 4 and 0 <= sec_new_column < 4:
+                                if ((sec_new_row, sec_new_column)) not in visited:
+                                    visited.add((sec_new_row, sec_new_column))
+                                    if self._matrix[sec_new_row][sec_new_column] == value:
+                                        self._matrix[sec_new_row][sec_new_column] = 0
+                                        print("EXIST", sec_new_row, sec_new_column)
+                                        print()
+                                        count += 1
+
+        if count == 2:
+            value *= 2 
+            self._matrix[row][column] = value
+        elif count > 2:
+            value *= 4 
+            self._matrix[row][column] = value
+        elif count == 1:
+            return False
+
+        print("Count", count)
+        print("Merged", value, "at", row, column)
+        return True
 
 
-def run_test(test_name, matrix, col):
-    tester = MergeTester(matrix)
-    tester.print_matrix(f"{test_name} - BEFORE")
+game = GameLogic()
+print("Before :")
+game.print_matrix()
+print()
 
-    merged = tester.merge_column(col)
-
-    tester.print_matrix(f"{test_name} - AFTER")
-    print("Merged:", merged)
-    print("Score:", tester._score)
-    print("=" * 40)
-
-
-run_test(
-    "Vertical Merge",
-    [
-        [2, 8, 4, 0],
-        [8, 8, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-    ],
-    col=0
-)
+print("Merged :")
+while game.merge():
+    array = game.rearrange()
+    game.print_matrix()
+    print()
