@@ -5,7 +5,7 @@ class GameLogic:
     def __init__(self):
         self._matrix = [
           [0, 0, 4, 0],
-          [0, 0, 4, 4],
+          [0, 0, 4, 0],
           [0, 0, 0, 0],
           [0, 0, 0, 0],
         ]
@@ -80,7 +80,7 @@ class GameLogic:
             (1,  0),
             (0,  1)
         ]
-        count = 1
+        count = 0
         visited = set()
 
         for (i, j) in indexes:
@@ -112,7 +112,7 @@ class GameLogic:
         elif count > 2:
             value *= 4 
             self._matrix[row][column] = value
-        elif count == 1:
+        else:
             return False
 
         print("Count", count)
