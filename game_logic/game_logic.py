@@ -1,6 +1,9 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
 import random
-import math
+from game_logic.utils.random_choices import (
+    temp_random_choices,
+    dynamic_random_choices
+)
 from queue import Queue
 
 
@@ -18,47 +21,17 @@ class GameLogic:
 
         if max_value >= 1024:
             print("dynamic")
-            return self.dynamic_random_choices(max_value)
+            random_choices = dynamic_random_choices(max_value)
+            max_value = random_choices[0]
+            while True:
+                if max_value < 2:
+                    break
+                max_value = max_value // 2
+                self.remove_redundant(max_value)
+            return random.choices(random_choices)[0]
         else:
             print("temp")
-            return self.temp_random_choices()
-
-    def dynamic_random_choices(self, max_value):
-        random_choice = set()
-        count = 0
-        max_value = max_value // 2 // 2
-        
-        while True:
-            if count == 6:
-                break
-            max_value = max_value // 2
-            random_choice.add(max_value)
-            count += 1
-            
-        while True:
-            if max_value < 2:
-                break
-            max_value = max_value // 2
-            self.remove_redundant(max_value)
-
-        random_choice = sorted(list(random_choice))
-        print(random_choice)
-        return random.choices(random_choice)[0]
-    
-    def temp_random_choices(self):
-        if self._score < 50:
-            random_choices = [2, 4, 8]
-        elif self._score < 100:
-            random_choices = [2, 4, 8, 16]
-        elif self._score < 200:
-            random_choices = [2, 4, 8, 16, 32]
-        elif self._score < 300:
-            random_choices = [2, 4, 8, 16, 32, 64]
-        else:
-            random_choices = [2, 4, 8, 16, 32, 64]
-        
-        print(random_choices)
-        return random.choices(random_choices)[0]
+            return temp_random_choices(self._score)
     
     def remove_redundant(self, value):
         for i in range(GRID_LENGTH):
