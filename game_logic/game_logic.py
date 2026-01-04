@@ -1,5 +1,9 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
 import random
+from game_logic.utils.random_choices import (
+    temp_random_choices,
+    dynamic_random_choices
+)
 from queue import Queue
 
 
@@ -10,48 +14,31 @@ class GameLogic:
 
     def random_value(self):
         max_value = 2
-
         for i in range(GRID_LENGTH):
             for j in range(GRID_WIDTH):
                 if self._matrix[i][j] != 0:
                     max_value = max(max_value, self._matrix[i][j])
 
-        if max_value == 2:
-            return random.choice([2, 4])
-        elif max_value >= 1024:
-            min_value = 4
-            return self.random_choices(max_value, min_value)
-        elif max_value >= 2048:
-            min_value = 8
-            return self.random_choices(max_value, min_value)
-        elif max_value >= 4096:
-            min_value = 16
-            return self.random_choices(max_value, min_value)
-        elif max_value >= 8192:
-            min_value = 32
-            return self.random_choices(max_value, min_value)
-        elif max_value >= 16384:
-            min_value = 64
-            return self.random_choices(max_value, min_value)
+        if max_value >= 1024:
+            print("dynamic")
+            random_choices = dynamic_random_choices(max_value)
+            max_value = random_choices[0]
+            while True:
+                if max_value < 2:
+                    break
+                max_value = max_value // 2
+                self.remove_redundant(max_value)
+            return random.choices(random_choices)[0]
         else:
-            min_value = 2
-            return self.random_choices(max_value, min_value)
-
-    def random_choices(self, max_value, min_value):
-        random_choice = set()
-        while True:
-            if min_value > max_value:
-                break
-            random_choice.add(min_value)
-            min_value *= 2
-        
-        random_choice = sorted(list(random_choice))
-        options = list(random_choice)
-        if random.random() < 0.95:
-            options = options[:-1]
-        value = random.choice(options)
-        print("Random value:", value)
-        return value
+            print("temp")
+            return temp_random_choices(self._score)
+    
+    def remove_redundant(self, value):
+        for i in range(GRID_LENGTH):
+            for j in range(GRID_WIDTH):
+                if self._matrix[i][j] == value:
+                    self._matrix[i][j] = 0
+        return
 
     def print_matrix(self):
         for row in self._matrix:
