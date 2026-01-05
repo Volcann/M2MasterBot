@@ -1,4 +1,6 @@
 import pygame
+import time
+
 from config.constants import (
     CELL_SIZE, MARGIN,
     CELL_COLOR,
@@ -58,6 +60,7 @@ class GameUI:
         self.clock = pygame.time.Clock()
         self.input_column = None
         self.next_value = self.game_logic.random_value()
+        self.game_is_over = False
 
         self.temp_message = None
         self.temp_message_time = 0
@@ -144,6 +147,7 @@ class GameUI:
                 exit()
 
             elif event.type == pygame.KEYDOWN:
+
                 for i in range(GRID_WIDTH):
                     if event.key == getattr(pygame, f'K_{i}'):
                         self.input_column = i
@@ -155,6 +159,16 @@ class GameUI:
                         col = (x - MARGIN) // (CELL_SIZE + MARGIN)
                         if 0 <= col < GRID_WIDTH:
                             self.input_column = col
+                
+    def reset_game(self):
+        self.game_logic._reset()
+        self.game_is_over = False
+        self.input_column = None
+        self.next_value = self.game_logic.random_value()
+
+        self.temp_message = None
+        self.temp_message_time = 0
+
 
     def draw_game_over(self):
         overlay = pygame.Surface(
@@ -195,13 +209,19 @@ class GameUI:
         )
 
     def run(self):
-        game_is_over = False
-
         while True:
+            if self.game_logic.game_over(self.next_value):
+                self.game_is_over = True
+                self.draw_game_over()
+                time.sleep(5)
+
+            if self.game_is_over:
+                self.reset_game()
+
             self.handle_events()
             show_message = False
 
-            if not game_is_over and self.input_column is not None:
+            if not self.game_is_over and self.input_column is not None:
                 print("Input column:", self.input_column)
                 if not self.game_logic.add_to_column(
                     self.next_value, self.input_column
@@ -215,9 +235,6 @@ class GameUI:
             if show_message:
                 self.show_temp_message("Column is full")
 
-            if self.game_logic.game_over(self.next_value):
-                game_is_over = True
-                self.draw_game_over()
             self.game_logic.rearrange()
             self.draw_matrix()
             self.clock.tick(30)

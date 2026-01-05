@@ -11,6 +11,10 @@ class GameLogic:
     def __init__(self):
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
+        
+    def _reset(self):
+        self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
+        self._score = 0
 
     def random_value(self):
         max_value = 2
