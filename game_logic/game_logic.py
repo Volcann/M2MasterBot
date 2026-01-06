@@ -5,7 +5,8 @@ from game_logic.utils.utils import (
     temp_random_choices,
     dynamic_random_choices,
     rearrange,
-    print_matrix
+    print_matrix,
+    remove_redundant
 )
 
 
@@ -42,7 +43,7 @@ class GameLogic:
                 if max_value < 2:
                     break
                 max_value = max_value // 2
-                self.remove_redundant(max_value)
+                self._matrix = remove_redundant(self._matrix, max_value)
             return random.choices(random_choices)[0]
         else:
             print("temp")
