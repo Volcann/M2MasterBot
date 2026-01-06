@@ -1,10 +1,12 @@
-from config.constants import GRID_LENGTH, GRID_WIDTH
 import random
-from game_logic.utils.random_choices import (
+
+from config.constants import GRID_LENGTH, GRID_WIDTH
+from game_logic.utils.utils import (
     temp_random_choices,
-    dynamic_random_choices
+    dynamic_random_choices,
+    rearrange,
+    print_matrix
 )
-from queue import Queue
 
 
 class GameLogic:
@@ -15,6 +17,15 @@ class GameLogic:
     def _reset(self):
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
+
+    def get_matrix(self):
+        return self._matrix
+    
+    def set_matrix(self, matrix):
+        self._matrix = matrix
+        
+    def get_score(self):
+        return self._score
 
     def random_value(self):
         max_value = 2
@@ -36,58 +47,6 @@ class GameLogic:
         else:
             print("temp")
             return temp_random_choices(self._score)
-    
-    def remove_redundant(self, value):
-        for i in range(GRID_LENGTH):
-            for j in range(GRID_WIDTH):
-                if self._matrix[i][j] == value:
-                    self._matrix[i][j] = 0
-        return
-
-    def print_matrix(self):
-        for row in self._matrix:
-            print(row)
-        print()
-
-    def rearrange(self, column=None):
-        if column is None:
-            for i in range(GRID_LENGTH):
-                queue = Queue()
-                non_zero_value = 0
-
-                for j in range(GRID_WIDTH):
-                    if self._matrix[j][i] == 0:
-                        continue
-                    else:
-                        queue.put(self._matrix[j][i])
-
-                for j in range(GRID_WIDTH):
-                    self._matrix[j][i] = 0
-
-                non_zero_value = queue.qsize()
-                for j in range(non_zero_value):
-                    value = queue.get()
-                    if value > 0:
-                        self._matrix[j][i] = value
-        else:
-            queue = Queue()
-            non_zero_value = 0
-
-            for i in range(GRID_LENGTH):
-                if self._matrix[i][column] == 0:
-                    continue
-                else:
-                    queue.put(self._matrix[i][column])
-
-            for i in range(GRID_LENGTH):
-                self._matrix[i][column] = 0
-
-            non_zero_value = queue.qsize()
-            for i in range(non_zero_value):
-                value = queue.get()
-                if value > 0:
-                    self._matrix[i][column] = value
-        return
 
     def can_merge_last_row(self, column, value):
         last_row = GRID_LENGTH - 1
@@ -101,7 +60,7 @@ class GameLogic:
                     self._matrix[GRID_LENGTH - 1][column] *= 2
                     self._score += self._matrix[GRID_LENGTH - 1][column]
                     while self.merge_column(column):
-                        self.rearrange(column)
+                        self._matrix = rearrange(self._matrix ,column)
                     return True
                 else:
                     print("Column is already full")
@@ -110,14 +69,16 @@ class GameLogic:
             if self._matrix[index][column] == 0:
                 self._matrix[index][column] = value
                 while self.merge_column(column):
-                    self.rearrange()
+                    self._matrix = rearrange(self._matrix)
                 break
             else:
                 index += 1
+
         for i in range(GRID_WIDTH):
             while self.merge_column(i):
-                self.rearrange()
-        self.print_matrix()
+                self._matrix = rearrange(self._matrix)
+
+        print_matrix(self._matrix)
         return True
 
     def merge_column(self, column=-1):
@@ -184,19 +145,4 @@ class GameLogic:
 
         print("Count", count)
         print("Merged", value, "at", row, column)
-        return True
-
-    def get_score(self):
-        return self._score
-
-    def game_over(self, value):
-        for i in range(GRID_WIDTH):
-            for j in range(GRID_LENGTH):
-                if self._matrix[j][i] == 0:
-                    return False
-
-        for i in range(GRID_LENGTH):
-            if self._matrix[(GRID_WIDTH - 1)][i] == value:
-                return False
-
         return True
