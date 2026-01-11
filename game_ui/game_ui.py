@@ -8,7 +8,7 @@ from config.constants import (
     NEXT_FONT_SIZE, GRID_LENGTH,
     GRID_WIDTH
 )
-
+from game_logic.utils.utils import game_over, rearrange
 
 class GameUI:
     COLORS = {
@@ -59,7 +59,7 @@ class GameUI:
 
         self.clock = pygame.time.Clock()
         self.input_column = None
-        self.next_value = self.game_logic.random_value()
+        self.next_value = self.game_logic.get_random_value()
         self.game_is_over = False
 
         self.temp_message = None
@@ -164,11 +164,10 @@ class GameUI:
         self.game_logic._reset()
         self.game_is_over = False
         self.input_column = None
-        self.next_value = self.game_logic.random_value()
+        self.next_value = self.game_logic.get_random_value()
 
         self.temp_message = None
         self.temp_message_time = 0
-
 
     def draw_game_over(self):
         overlay = pygame.Surface(
@@ -210,7 +209,8 @@ class GameUI:
 
     def run(self):
         while True:
-            if self.game_logic.game_over(self.next_value):
+            matrix = self.game_logic.get_matrix()
+            if game_over(matrix, self.next_value):
                 self.game_is_over = True
                 self.draw_game_over()
                 time.sleep(5)
@@ -228,13 +228,14 @@ class GameUI:
                 ):
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
-                    self.game_logic.rearrange()
                 else:
-                    self.next_value = self.game_logic.random_value()
+                    self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
             if show_message:
                 self.show_temp_message("Column is full")
 
-            self.game_logic.rearrange()
+            matrix = self.game_logic.get_matrix()
+            matrix = rearrange(matrix)
+            self.game_logic.set_matrix(matrix)
             self.draw_matrix()
             self.clock.tick(30)
