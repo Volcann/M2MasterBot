@@ -124,3 +124,78 @@ def game_over(matrix, value):
             return False
 
     return True
+
+
+def merging_values(matrix, score, row, column, value):
+    indexes = [
+        (-1, 0),
+        (0, -1),
+        (1,  0),
+        (0,  1)
+    ]
+    count = 0
+    visited = set()
+
+    for (i, j) in indexes:
+        new_row = row+i
+        new_column = column+j
+        if 0 <= new_row < GRID_LENGTH and 0 <= new_column < GRID_WIDTH:
+            if ((new_row, new_column)) not in visited:
+                visited.add((new_row, new_column))
+                if matrix[new_row][new_column] == value:
+                    print("EXIST", new_row, new_column)
+                    print()
+                    matrix[new_row][new_column] = 0
+                    count += 1
+                    for (i, j) in indexes:
+                        sec_new_row = new_row+i
+                        sec_new_column = new_column+j
+                        if 0 <= sec_new_row < GRID_LENGTH and 0 <= sec_new_column < GRID_WIDTH:
+                            if ((sec_new_row, sec_new_column)) not in visited:
+                                visited.add((sec_new_row, sec_new_column))
+                                if matrix[sec_new_row][sec_new_column] == value:
+                                    matrix[sec_new_row][sec_new_column] = 0
+                                    print("EXIST", sec_new_row, sec_new_column)
+                                    print()
+                                    count += 1
+
+    if count == 2:
+        value *= 2 
+        matrix[row][column] = value
+        score += value
+    elif count == 3:
+        value *= 4 
+        matrix[row][column] = value
+        score += value
+    elif count == 4:
+        value *= 8 
+        matrix[row][column] = value
+        score += value
+    else:
+        return False, matrix, score
+
+    print("Count", count)
+    print("Merged", value, "at", row, column)
+    return True, matrix, score
+
+
+def merge_column(matrix, score, column=-1):
+    print(score)
+    if column == -1:
+        for i in range(GRID_LENGTH):
+            for j in range(GRID_WIDTH):
+                value = matrix[j][i]
+                if value == 0:
+                    continue
+                merged, matrix, score = merging_values(matrix, score, j, i, value)
+                if merged:
+                    return True, matrix, score
+    else:
+        for j in range(GRID_WIDTH):
+            value = matrix[j][column]
+            if value == 0:
+                continue
+            merged, matrix, score = merging_values(matrix, score, j, column, value)
+            if merged:
+                return True, matrix, score
+    return False, matrix, score

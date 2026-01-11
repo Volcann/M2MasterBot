@@ -1,9 +1,8 @@
-import random
-
 from config.constants import GRID_LENGTH, GRID_WIDTH
 from game_logic.utils.utils import (
     rearrange,
     print_matrix,
+    merge_column,
     random_value
 )
 
@@ -65,71 +64,5 @@ class GameLogic:
         return True
 
     def merge_column(self, column=-1):
-        if column == -1:
-            for i in range(GRID_LENGTH):
-                for j in range(GRID_WIDTH):
-                    value = self._matrix[j][i]
-                    if value == 0:
-                        continue
-                    if self.merging_values(j, i, value):
-                        return True
-        else:
-            for j in range(GRID_WIDTH):
-                value = self._matrix[j][column]
-                if value == 0:
-                    continue
-                if self.merging_values(j, column, value):
-                    return True
-        return False
-    
-    def merging_values(self, row, column, value):
-        indexes = [
-            (-1, 0),
-            (0, -1),
-            (1,  0),
-            (0,  1)
-        ]
-        count = 0
-        visited = set()
-
-        for (i, j) in indexes:
-            new_row = row+i
-            new_column = column+j
-            if 0 <= new_row < GRID_LENGTH and 0 <= new_column < GRID_WIDTH:
-                if ((new_row, new_column)) not in visited:
-                    visited.add((new_row, new_column))
-                    if self._matrix[new_row][new_column] == value:
-                        print("EXIST", new_row, new_column)
-                        print()
-                        self._matrix[new_row][new_column] = 0
-                        count += 1
-                        for (i, j) in indexes:
-                            sec_new_row = new_row+i
-                            sec_new_column = new_column+j
-                            if 0 <= sec_new_row < GRID_LENGTH and 0 <= sec_new_column < GRID_WIDTH:
-                                if ((sec_new_row, sec_new_column)) not in visited:
-                                    visited.add((sec_new_row, sec_new_column))
-                                    if self._matrix[sec_new_row][sec_new_column] == value:
-                                        self._matrix[sec_new_row][sec_new_column] = 0
-                                        print("EXIST", sec_new_row, sec_new_column)
-                                        print()
-                                        count += 1
-
-        if count == 2:
-            value *= 2 
-            self._matrix[row][column] = value
-            self._score += value
-        elif count == 3:
-            value *= 4 
-            self._matrix[row][column] = value
-            self._score += value
-        elif count == 4:
-            value *= 8 
-            self._matrix[row][column] = value
-            self._score += value
-        else:
-            return False
-
-        print("Count", count)
-        print("Merged", value, "at", row, column)
-        return True
+        merged, self._matrix, self._score = merge_column(self._matrix, self._score, column)
+        return merged
