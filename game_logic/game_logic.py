@@ -2,11 +2,9 @@ import random
 
 from config.constants import GRID_LENGTH, GRID_WIDTH
 from game_logic.utils.utils import (
-    temp_random_choices,
-    dynamic_random_choices,
     rearrange,
     print_matrix,
-    remove_redundant
+    random_value
 )
 
 
@@ -28,26 +26,10 @@ class GameLogic:
     def get_score(self):
         return self._score
 
-    def random_value(self):
-        max_value = 2
-        for i in range(GRID_LENGTH):
-            for j in range(GRID_WIDTH):
-                if self._matrix[i][j] != 0:
-                    max_value = max(max_value, self._matrix[i][j])
-
-        if max_value >= 1024:
-            print("dynamic")
-            random_choices = dynamic_random_choices(max_value)
-            max_value = random_choices[0]
-            while True:
-                if max_value < 2:
-                    break
-                max_value = max_value // 2
-                self._matrix = remove_redundant(self._matrix, max_value)
-            return random.choices(random_choices)[0]
-        else:
-            print("temp")
-            return temp_random_choices(self._score)
+    def get_random_value(self):
+        value, matrix = random_value(self._matrix, self._score)
+        self._matrix = matrix
+        return value
 
     def can_merge_last_row(self, column, value):
         last_row = GRID_LENGTH - 1
@@ -137,8 +119,12 @@ class GameLogic:
             value *= 2 
             self._matrix[row][column] = value
             self._score += value
-        elif count > 2:
+        elif count == 3:
             value *= 4 
+            self._matrix[row][column] = value
+            self._score += value
+        elif count == 4:
+            value *= 8 
             self._matrix[row][column] = value
             self._score += value
         else:

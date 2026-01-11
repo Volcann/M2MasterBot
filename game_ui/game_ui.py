@@ -59,7 +59,7 @@ class GameUI:
 
         self.clock = pygame.time.Clock()
         self.input_column = None
-        self.next_value = self.game_logic.random_value()
+        self.next_value = self.game_logic.get_random_value()
         self.game_is_over = False
 
         self.temp_message = None
@@ -164,7 +164,7 @@ class GameUI:
         self.game_logic._reset()
         self.game_is_over = False
         self.input_column = None
-        self.next_value = self.game_logic.random_value()
+        self.next_value = self.game_logic.get_random_value()
 
         self.temp_message = None
         self.temp_message_time = 0
@@ -229,7 +229,7 @@ class GameUI:
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
                 else:
-                    self.next_value = self.game_logic.random_value()
+                    self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
             if show_message:
                 self.show_temp_message("Column is full")

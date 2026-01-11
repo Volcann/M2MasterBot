@@ -35,6 +35,28 @@ def dynamic_random_choices(max_value):
     return random_choices
 
 
+def random_value(matrix, score):
+    max_value = 2
+    for i in range(GRID_LENGTH):
+        for j in range(GRID_WIDTH):
+            if matrix[i][j] != 0:
+                max_value = max(max_value, matrix[i][j])
+
+    if max_value >= 1024:
+        print("dynamic")
+        random_choices = dynamic_random_choices(max_value)
+        max_value = random_choices[0]
+        while True:
+            if max_value < 2:
+                break
+            max_value = max_value // 2
+            matrix = remove_redundant(matrix, max_value)
+        return random.choices(random_choices)[0], matrix
+    else:
+        print("temp")
+        return temp_random_choices(score), matrix
+
+
 def remove_redundant(matrix, value):
     for i in range(GRID_LENGTH):
         for j in range(GRID_WIDTH):
