@@ -13,18 +13,10 @@ class BotGameUI(GameUI):
         self.move_delay = 500 # milliseconds
 
     def handle_events(self):
-        # Handle quit events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-            # Optional: Allow toggling bot or manual intervention?
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    pygame.quit()
-                    exit()
+        # Call parent event handling for keyboard, restart, fullscreen, etc.
+        super().handle_events()
 
-        # Bot Logic
+        # Bot Logic - only if no manual input was given
         if not self.game_is_over and self.input_column is None:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_move_time > self.move_delay:
