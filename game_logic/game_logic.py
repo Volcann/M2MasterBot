@@ -15,6 +15,10 @@ class GameLogic:
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
 
+    def reset(self):
+        """Public method to reset the game state."""
+        self._reset()
+
     def get_matrix(self):
         return self._matrix
 
@@ -47,9 +51,10 @@ class GameLogic:
                             break
                         count_merge.append(count)
                         self._matrix = rearrange(self._matrix, column)
-                    return True, count
+                    merge_count = max(count_merge) if count_merge else count
+                    return True, merge_count
                 else:
-                    print("Column is already full")
+                    pass  # Column is full
                     return False, 0
 
             if self._matrix[index][column] == 0:
@@ -59,7 +64,7 @@ class GameLogic:
                     if not merged:
                         break
                     count_merge.append(count)
-                    self._matrix = rearrange(self._matrix)
+                    self._matrix = rearrange(self._matrix, column)
                 break
             else:
                 index += 1
@@ -72,12 +77,12 @@ class GameLogic:
                 count_merge.append(count)
                 self._matrix = rearrange(self._matrix)
 
-        count_merge = count_merge.sort()
+        count_merge.sort()
         merge_count = count_merge[-1] if count_merge else 0
-        print("Merge count : ", count_merge)
+
         return True, merge_count
 
     def merge_column(self, column=-1):
         merged, self._matrix, self._score, count = merge_column(self._matrix, self._score, column)
-        print("Count : ", count)
+
         return merged, count

@@ -168,8 +168,7 @@ def merging_values(matrix, score, row, column, value):
     else:
         return False, matrix, score, count
 
-    print("Count", count)
-    print("Merged", value, "at", row, column)
+
     return True, matrix, score, count
 
 
