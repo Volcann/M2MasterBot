@@ -8,7 +8,9 @@ from config.constants import (
     NEXT_FONT_SIZE, GRID_LENGTH,
     GRID_WIDTH
 )
+from M2Bot.game_bot import GameBot
 from game_logic.utils.utils import game_over, rearrange
+
 
 class GameUI:
     COLORS = {
@@ -222,15 +224,16 @@ class GameUI:
             show_message = False
 
             if not self.game_is_over and self.input_column is not None:
-                print("Input column:", self.input_column)
-                if not self.game_logic.add_to_column(
+                merged, count = self.game_logic.add_to_column(
                     self.next_value, self.input_column
-                ):
+                )
+                if not merged:
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
                 else:
                     self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
+
             if show_message:
                 self.show_temp_message("Column is full")
 

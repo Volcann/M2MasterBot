@@ -1,7 +1,6 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
 from game_logic.utils.utils import (
     rearrange,
-    print_matrix,
     merge_column,
     random_value
 )
@@ -11,17 +10,17 @@ class GameLogic:
     def __init__(self):
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
-        
+
     def _reset(self):
         self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
         self._score = 0
 
     def get_matrix(self):
         return self._matrix
-    
+
     def set_matrix(self, matrix):
         self._matrix = matrix
-        
+
     def get_score(self):
         return self._score
 
@@ -36,33 +35,49 @@ class GameLogic:
 
     def add_to_column(self, value, column):
         index = 0
+        count_merge = []
         while True:
             if index == GRID_LENGTH:
                 if self.can_merge_last_row(column, value):
                     self._matrix[GRID_LENGTH - 1][column] *= 2
                     self._score += self._matrix[GRID_LENGTH - 1][column]
-                    while self.merge_column(column):
-                        self._matrix = rearrange(self._matrix ,column)
-                    return True
+                    while True:
+                        merged, count = self.merge_column(column)
+                        if not merged:
+                            break
+                        count_merge.append(count)
+                        self._matrix = rearrange(self._matrix, column)
+                    return True, count
                 else:
                     print("Column is already full")
-                    return False
+                    return False, 0
 
             if self._matrix[index][column] == 0:
                 self._matrix[index][column] = value
-                while self.merge_column(column):
+                while True:
+                    merged, count = self.merge_column(column)
+                    if not merged:
+                        break
+                    count_merge.append(count)
                     self._matrix = rearrange(self._matrix)
                 break
             else:
                 index += 1
 
         for i in range(GRID_WIDTH):
-            while self.merge_column(i):
+            while True:
+                merged, count = self.merge_column(i)
+                if not merged:
+                    break
+                count_merge.append(count)
                 self._matrix = rearrange(self._matrix)
 
-        print_matrix(self._matrix)
-        return True
+        count_merge = count_merge.sort()
+        merge_count = count_merge[-1] if count_merge else 0
+        print("Merge count : ", count_merge)
+        return True, merge_count
 
     def merge_column(self, column=-1):
-        merged, self._matrix, self._score = merge_column(self._matrix, self._score, column)
-        return merged
+        merged, self._matrix, self._score, count = merge_column(self._matrix, self._score, column)
+        print("Count : ", count)
+        return merged, count

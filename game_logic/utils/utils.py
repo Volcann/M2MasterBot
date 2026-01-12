@@ -3,6 +3,7 @@ from queue import Queue
 
 from config.constants import GRID_LENGTH, GRID_WIDTH
 
+
 def temp_random_choices(score):
     if score < 50:
         random_choices = [2, 4, 8]
@@ -14,8 +15,7 @@ def temp_random_choices(score):
         random_choices = [2, 4, 8, 16, 32, 64]
     else:
         random_choices = [2, 4, 8, 16, 32, 64]
-        
-    print(random_choices)
+
     return random.choices(random_choices)[0]
 
 
@@ -43,7 +43,6 @@ def random_value(matrix, score):
                 max_value = max(max_value, matrix[i][j])
 
     if max_value >= 1024:
-        print("dynamic")
         random_choices = dynamic_random_choices(max_value)
         max_value = random_choices[0]
         while True:
@@ -53,7 +52,6 @@ def random_value(matrix, score):
             matrix = remove_redundant(matrix, max_value)
         return random.choices(random_choices)[0], matrix
     else:
-        print("temp")
         return temp_random_choices(score), matrix
 
 
@@ -143,8 +141,6 @@ def merging_values(matrix, score, row, column, value):
             if ((new_row, new_column)) not in visited:
                 visited.add((new_row, new_column))
                 if matrix[new_row][new_column] == value:
-                    print("EXIST", new_row, new_column)
-                    print()
                     matrix[new_row][new_column] = 0
                     count += 1
                     for (i, j) in indexes:
@@ -155,8 +151,6 @@ def merging_values(matrix, score, row, column, value):
                                 visited.add((sec_new_row, sec_new_column))
                                 if matrix[sec_new_row][sec_new_column] == value:
                                     matrix[sec_new_row][sec_new_column] = 0
-                                    print("EXIST", sec_new_row, sec_new_column)
-                                    print()
                                     count += 1
 
     if count == 2:
@@ -168,34 +162,35 @@ def merging_values(matrix, score, row, column, value):
         matrix[row][column] = value
         score += value
     elif count == 4:
-        value *= 8 
+        value *= 8
         matrix[row][column] = value
         score += value
     else:
-        return False, matrix, score
+        return False, matrix, score, count
 
     print("Count", count)
     print("Merged", value, "at", row, column)
-    return True, matrix, score
+    return True, matrix, score, count
 
 
 def merge_column(matrix, score, column=-1):
-    print(score)
+    count = 0
     if column == -1:
         for i in range(GRID_LENGTH):
             for j in range(GRID_WIDTH):
                 value = matrix[j][i]
                 if value == 0:
                     continue
-                merged, matrix, score = merging_values(matrix, score, j, i, value)
+                merged, matrix, score, count = merging_values(matrix, score, j, i, value)
                 if merged:
-                    return True, matrix, score
+                    return True, matrix, score, count
     else:
         for j in range(GRID_WIDTH):
             value = matrix[j][column]
             if value == 0:
                 continue
-            merged, matrix, score = merging_values(matrix, score, j, column, value)
+            merged, matrix, score, count = merging_values(matrix, score, j, column, value)
             if merged:
-                return True, matrix, score
-    return False, matrix, score
+                return True, matrix, score, count
+
+    return False, matrix, score, count
