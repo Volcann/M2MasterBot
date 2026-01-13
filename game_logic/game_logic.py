@@ -16,7 +16,6 @@ class GameLogic:
         self._score = 0
 
     def reset(self):
-        """Public method to reset the game state."""
         self._reset()
 
     def get_matrix(self):
@@ -54,7 +53,7 @@ class GameLogic:
                     merge_count = max(count_merge) if count_merge else count
                     return True, merge_count
                 else:
-                    pass  # Column is full
+                    pass
                     return False, 0
 
             if self._matrix[index][column] == 0:
@@ -84,5 +83,4 @@ class GameLogic:
 
     def merge_column(self, column=-1):
         merged, self._matrix, self._score, count = merge_column(self._matrix, self._score, column)
-
         return merged, count

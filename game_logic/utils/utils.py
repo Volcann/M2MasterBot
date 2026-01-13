@@ -23,9 +23,11 @@ def dynamic_random_choices(max_value):
     random_choice = set()
     count = 0
     max_value = max_value // 2 // 2
-    
+
     while True:
         if count == 6:
+            break
+        if max_value < 2:
             break
         max_value = max_value // 2
         random_choice.add(max_value)

@@ -1,30 +1,28 @@
-
 import pygame
-import time
+
 from game_ui.game_ui import GameUI
 from game_logic.game_logic import GameLogic
 from M2Bot.game_bot import GameBot
+
 
 class BotGameUI(GameUI):
     def __init__(self, game_logic):
         super().__init__(game_logic)
         self.bot = GameBot()
         self.last_move_time = 0
-        self.move_delay = 500 # milliseconds
+        self.move_delay = 500
 
     def handle_events(self):
-        # Call parent event handling for keyboard, restart, fullscreen, etc.
         super().handle_events()
 
-        # Bot Logic - only if no manual input was given
         if not self.game_is_over and self.input_column is None:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_move_time > self.move_delay:
                 matrix = self.game_logic.get_matrix()
-                # Get best move from bot
                 best_col = self.bot.solve(matrix, self.next_value)
                 self.input_column = best_col
                 self.last_move_time = current_time
+
 
 if __name__ == "__main__":
     game_logic = GameLogic()
