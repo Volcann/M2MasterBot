@@ -1,20 +1,17 @@
 import pygame
-import time
 import math
 import colorsys
 
 from config.constants import (
     CELL_SIZE, MARGIN,
-    CELL_COLOR,
-    FONT_SIZE, SCORE_FONT_SIZE,
-    NEXT_FONT_SIZE, GRID_LENGTH,
+    SCORE_FONT_SIZE,
+    GRID_LENGTH,
     GRID_WIDTH
 )
 from game_logic.utils.utils import game_over, rearrange
 
 
 class GameUI:
-    # Base colors for low values
     BASE_COLORS = {
         0: (25, 25, 25),
         2: (66, 133, 244),
@@ -30,7 +27,6 @@ class GameUI:
         2048: (255, 215, 0),
     }
 
-    # UI Colors
     BG_DARK = (12, 12, 15)
     GRID_BG = (28, 28, 35)
     TEXT_LIGHT = (245, 245, 245)
@@ -54,25 +50,19 @@ class GameUI:
         )
 
         pygame.init()
-        
-        # Fullscreen state
         self.is_fullscreen = False
         self.base_width = self.window_width
         self.base_height = self.window_height
         self.scale_factor = 1.0
-        self.screen_offset = (0, 0)  # Offset for centered rendering in fullscreen
-        
-        # Render surface (always at base resolution)
+        self.screen_offset = (0, 0)
+
         self.render_surface = pygame.Surface((self.base_width, self.base_height))
-        
-        # Use RESIZABLE flag to enable macOS native fullscreen (green button)
+
         self.screen = pygame.display.set_mode(
             (self.window_width, self.window_height),
             pygame.RESIZABLE
         )
         pygame.display.set_caption("M2 Block")
-
-        # Pre-create fonts at different sizes for dynamic sizing
         self.fonts = {
             size: pygame.font.SysFont("Arial", size, bold=True)
             for size in range(12, 45, 2)
@@ -88,66 +78,48 @@ class GameUI:
         self.next_value = self.game_logic.get_random_value()
         self.game_is_over = False
 
-        # Hover state
         self.hover_column = -1
         self.mouse_pos = (0, 0)
-
-        # High score
         self.high_score = 0
-
-        # Animation states
-        # merge_animations: [(from_col, from_row, to_col, to_row, start_time, value)] - blocks flying to merge
         self.merge_animations = []
-        self.pulse_animations = []    # [(col, row, start_time, value)] - result block pulse
-        self.drop_animations = []     # [(col, current_y, target_y, value, start_time)]
-        
-        # Store previous matrix to detect changes
+        self.pulse_animations = []
+        self.drop_animations = []
         self.prev_matrix = None
 
-        # Messages
         self.temp_message = None
         self.temp_message_time = 0
         self.temp_message_duration = 1500
 
-        # Buttons
         self.restart_button_rect = None
         self.fullscreen_button_rect = None
 
     def get_cell_color(self, value):
-        """Generate endless smooth colors using HSV color wheel."""
         if value == 0:
             return self.BASE_COLORS[0]
         if value in self.BASE_COLORS:
             return self.BASE_COLORS[value]
-        
-        # For values beyond 2048, generate colors based on log2
-        # This creates a smooth rainbow progression
         power = int(math.log2(value)) if value > 0 else 0
-        
-        # Rotate through hue based on power level
-        # Starting from power 12 (4096), each power shifts hue
-        hue = ((power - 12) * 0.08) % 1.0  # Golden ratio offset for nice distribution
-        saturation = 0.75 + 0.15 * math.sin(power * 0.5)  # Vary saturation slightly
-        value_hsv = 0.85 + 0.1 * math.cos(power * 0.3)    # Vary brightness slightly
-        
+
+        hue = ((power - 12) * 0.08) % 1.0
+        saturation = 0.75 + 0.15 * math.sin(power * 0.5)
+        value_hsv = 0.85 + 0.1 * math.cos(power * 0.3)
+
         r, g, b = colorsys.hsv_to_rgb(hue, saturation, value_hsv)
         return (int(r * 255), int(g * 255), int(b * 255))
 
     def get_font_for_value(self, value, max_width):
-        """Get the largest font that fits the value in the given width."""
         text = str(value)
-        padding = 10  # Padding on each side
+        padding = 10
         available_width = max_width - padding * 2
-        
-        # Start from largest and work down
+
         for size in range(44, 10, -2):
             if size in self.fonts:
                 font = self.fonts[size]
                 text_width = font.size(text)[0]
                 if text_width <= available_width:
                     return font
-        
-        return self.fonts[12]  # Fallback to smallest
+
+        return self.fonts[12]
 
     def show_temp_message(self, text):
         self.temp_message = text
@@ -157,23 +129,18 @@ class GameUI:
         pygame.draw.rect(surface, color, rect, border_radius=radius)
 
     def draw_glow_rect(self, surface, color, rect, radius=12, glow_size=3):
-        """Draw a rect with a subtle glow effect."""
         glow_color = tuple(min(255, c + 40) for c in color)
         glow_rect = rect.inflate(glow_size, glow_size)
         pygame.draw.rect(surface, glow_color, glow_rect, border_radius=radius + 2, width=2)
         pygame.draw.rect(surface, color, rect, border_radius=radius)
 
     def draw_header(self):
-        """Draw title and scores."""
-        # Title - left aligned
         title = self.title_font.render("M2 BLOCK", True, self.ACCENT)
         self.render_surface.blit(title, (15, 15))
 
-        # Score - dynamic font size based on score magnitude (right aligned)
         score = self.game_logic.get_score()
         score_text = f"{score:,}"
-        
-        # Use smaller font for larger scores
+
         if score >= 10000000:
             score_font = pygame.font.SysFont("Arial", 16, bold=True)
         elif score >= 1000000:
@@ -182,73 +149,63 @@ class GameUI:
             score_font = pygame.font.SysFont("Arial", 24, bold=True)
         else:
             score_font = self.score_font
-        
+
         score_label = pygame.font.SysFont("Arial", 14).render("SCORE", True, self.TEXT_DIM)
         score_value = score_font.render(score_text, True, self.TEXT_LIGHT)
-        
-        # Right-align both label and value
+
         label_x = self.window_width - score_label.get_width() - 10
         value_x = self.window_width - score_value.get_width() - 10
         self.render_surface.blit(score_label, (label_x, 15))
         self.render_surface.blit(score_value, (value_x, 32))
 
-        # High Score - center area
         high_text = f"{self.high_score:,}"
         if self.high_score >= 100000:
             high_font = pygame.font.SysFont("Arial", 16, bold=True)
         else:
             high_font = self.button_font
-            
+
         high_label = pygame.font.SysFont("Arial", 14).render("BEST", True, self.TEXT_DIM)
         high_value = high_font.render(high_text, True, self.ACCENT)
-        
+
         center_x = self.window_width // 2
         self.render_surface.blit(high_label, (center_x - high_label.get_width() // 2, 15))
         self.render_surface.blit(high_value, (center_x - high_value.get_width() // 2, 32))
 
     def draw_column_hover(self):
-        """Draw hover indicator for columns."""
         if self.hover_column >= 0 and not self.game_is_over:
             x = MARGIN + self.hover_column * (CELL_SIZE + MARGIN)
             indicator_rect = pygame.Rect(x, self.top_padding - 8, CELL_SIZE, 4)
             pygame.draw.rect(self.render_surface, self.ACCENT_HOVER, indicator_rect, border_radius=2)
 
     def ease_out_cubic(self, t):
-        """Easing function for smooth animations."""
         return 1 - pow(1 - t, 3)
 
     def ease_out_elastic(self, t):
-        """Elastic easing for pop effect."""
         if t == 0 or t == 1:
             return t
         return pow(2, -10 * t) * math.sin((t * 10 - 0.75) * (2 * math.pi) / 3) + 1
 
     def draw_matrix(self):
-        # Draw everything to render_surface at base resolution
         self.render_surface.fill(self.BG_DARK)
         self.draw_header()
 
-        # Grid background
         grid_rect = pygame.Rect(
             MARGIN - 2, self.top_padding - 2,
             GRID_WIDTH * (CELL_SIZE + MARGIN) - MARGIN + 4,
             GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN + 4
         )
         pygame.draw.rect(self.render_surface, (40, 40, 50), grid_rect, border_radius=18)
-        
         inner_grid = pygame.Rect(
             MARGIN, self.top_padding,
             GRID_WIDTH * (CELL_SIZE + MARGIN) - MARGIN,
             GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN
         )
         self.draw_rounded_rect(self.render_surface, self.GRID_BG, inner_grid, 16)
-
         self.draw_column_hover()
 
         matrix = self.game_logic.get_matrix()
         current_time = pygame.time.get_ticks()
 
-        # First, draw empty cells
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 rect = pygame.Rect(
@@ -258,47 +215,41 @@ class GameUI:
                 )
                 self.draw_rounded_rect(self.render_surface, self.BASE_COLORS[0], rect, 14)
 
-        # Draw merge animations (blocks flying toward target and shrinking)
         for anim in self.merge_animations[:]:
             from_col, from_row, to_col, to_row, start_time, value = anim
             elapsed = current_time - start_time
-            duration = 200  # ms
-            
+            duration = 200
+
             if elapsed >= duration:
                 self.merge_animations.remove(anim)
                 continue
-            
+
             progress = self.ease_out_cubic(elapsed / duration)
-            
-            # Calculate start and end positions
             start_x = MARGIN + from_col * (CELL_SIZE + MARGIN)
             start_y = self.top_padding + MARGIN + from_row * (CELL_SIZE + MARGIN)
             end_x = MARGIN + to_col * (CELL_SIZE + MARGIN)
             end_y = self.top_padding + MARGIN + to_row * (CELL_SIZE + MARGIN)
-            
-            # Interpolate position
+
             current_x = start_x + (end_x - start_x) * progress
             current_y = start_y + (end_y - start_y) * progress
-            
-            # Shrink as it approaches target
+
             scale = 1.0 - 0.6 * progress
             alpha = int(255 * (1 - progress * 0.5))
-            
+
             scaled_size = int(CELL_SIZE * scale)
             offset = (CELL_SIZE - scaled_size) // 2
-            
+
             rect = pygame.Rect(
                 current_x + offset, current_y + offset,
                 scaled_size, scaled_size
             )
-            
+
             color = self.get_cell_color(value)
             temp_surface = pygame.Surface((scaled_size, scaled_size), pygame.SRCALPHA)
             pygame.draw.rect(temp_surface, (*color, alpha), 
                            (0, 0, scaled_size, scaled_size), border_radius=int(14 * scale))
             self.render_surface.blit(temp_surface, rect.topleft)
-            
-            # Draw text
+
             if scaled_size > 30:
                 font = self.get_font_for_value(value, scaled_size)
                 text_surface = font.render(str(value), True, (*self.TEXT_LIGHT[:3], alpha))
@@ -308,11 +259,10 @@ class GameUI:
                 temp_text.set_alpha(alpha)
                 self.render_surface.blit(temp_text, text_rect)
 
-        # Draw drop animations
         for anim in self.drop_animations[:]:
             col, current_y, target_y, value, start_time = anim
             elapsed = current_time - start_time
-            duration = 150  # ms for drop
+            duration = 150
             
             if elapsed >= duration:
                 self.drop_animations.remove(anim)
@@ -332,7 +282,6 @@ class GameUI:
             text_rect = text_surface.get_rect(center=rect.center)
             self.render_surface.blit(text_surface, text_rect)
 
-        # Draw static cells and pulse animations
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 value = matrix[row][col]
@@ -341,8 +290,7 @@ class GameUI:
 
                 base_x = MARGIN + col * (CELL_SIZE + MARGIN)
                 base_y = self.top_padding + MARGIN + row * (CELL_SIZE + MARGIN)
-                
-                # Check for pulse animation (result block grows)
+
                 scale = 1.0
                 for anim in self.pulse_animations:
                     anim_col, anim_row, start_time, _ = anim
@@ -350,7 +298,6 @@ class GameUI:
                         elapsed = current_time - start_time
                         if elapsed < 300:
                             progress = elapsed / 300
-                            # Bounce effect - grow then settle
                             scale = 1.0 + 0.2 * math.sin(progress * math.pi) * (1 - progress)
 
                 if scale != 1.0:
@@ -371,7 +318,6 @@ class GameUI:
                 text_rect = text_surface.get_rect(center=rect.center)
                 self.render_surface.blit(text_surface, text_rect)
 
-        # Cleanup old pulse animations
         self.pulse_animations = [
             a for a in self.pulse_animations 
             if current_time - a[2] < 300
@@ -379,11 +325,8 @@ class GameUI:
 
         self.draw_bottom_section()
         self.draw_temp_message()
-        
-        # Scale and blit to screen
         if self.is_fullscreen or self.scale_factor != 1.0:
-            self.screen.fill(self.BG_DARK)  # Fill background
-            # Use smoothscale for anti-aliased smooth rendering
+            self.screen.fill(self.BG_DARK)
             scaled_surface = pygame.transform.smoothscale(
                 self.render_surface,
                 (int(self.base_width * self.scale_factor), 
@@ -392,12 +335,10 @@ class GameUI:
             self.screen.blit(scaled_surface, self.screen_offset)
         else:
             self.screen.blit(self.render_surface, (0, 0))
-        
+
         pygame.display.flip()
 
     def draw_bottom_section(self):
-        """Draw next block and restart button."""
-        # Next value preview
         next_label = self.sub_font.render("NEXT", True, self.TEXT_DIM)
         label_x = (self.window_width - next_label.get_width()) // 2
         self.render_surface.blit(next_label, (label_x, self.window_height - CELL_SIZE - 70))
@@ -413,28 +354,23 @@ class GameUI:
         font = self.get_font_for_value(self.next_value, CELL_SIZE)
         next_text = font.render(str(self.next_value), True, self.TEXT_LIGHT)
         self.render_surface.blit(next_text, next_text.get_rect(center=next_rect.center))
-
-        # Restart button - centered at bottom
         button_width, button_height = 100, 36
         self.restart_button_rect = pygame.Rect(
             (self.window_width - button_width) // 2,
             self.window_height - 35,
             button_width, button_height
         )
-        
+
         is_hover = self.restart_button_rect.collidepoint(self.mouse_pos)
         button_color = self.BUTTON_HOVER if is_hover else self.BUTTON_BG
-        
+
         pygame.draw.rect(self.render_surface, button_color, self.restart_button_rect, border_radius=8)
         pygame.draw.rect(self.render_surface, self.ACCENT, self.restart_button_rect, width=2, border_radius=8)
-        
         restart_text = self.button_font.render("RESTART", True, self.ACCENT)
         self.render_surface.blit(restart_text, restart_text.get_rect(center=self.restart_button_rect.center))
 
     def handle_events(self):
-        # Use game coordinates (adjusted for fullscreen scaling)
         self.mouse_pos = self.get_game_mouse_pos()
-        
         x, y = self.mouse_pos
         if self.top_padding <= y < self.top_padding + GRID_LENGTH * (CELL_SIZE + MARGIN):
             col = (x - MARGIN) // (CELL_SIZE + MARGIN)
@@ -448,16 +384,12 @@ class GameUI:
                 exit()
 
             elif event.type == pygame.VIDEORESIZE:
-                # Handle window resize (including macOS native fullscreen)
                 new_width, new_height = event.size
                 self.screen = pygame.display.set_mode((new_width, new_height), pygame.RESIZABLE)
-                
-                # Calculate scale factor to fit content
                 scale_x = new_width / self.base_width
                 scale_y = new_height / self.base_height
                 self.scale_factor = min(scale_x, scale_y)
-                
-                # Calculate offset to center the game
+
                 scaled_w = int(self.base_width * self.scale_factor)
                 scaled_h = int(self.base_height * self.scale_factor)
                 self.screen_offset = ((new_width - scaled_w) // 2, (new_height - scaled_h) // 2)
@@ -466,64 +398,56 @@ class GameUI:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset_game()
-                    
+
                 for i in range(GRID_WIDTH):
                     if event.key == getattr(pygame, f'K_{i}'):
                         self.input_column = i
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    # Convert click position to game coordinates
                     click_x = (event.pos[0] - self.screen_offset[0]) / self.scale_factor
                     click_y = (event.pos[1] - self.screen_offset[1]) / self.scale_factor
-                    
+
                     if self.restart_button_rect and self.restart_button_rect.collidepoint((click_x, click_y)):
                         self.reset_game()
                         return
-                    
+
                     if click_y >= self.top_padding:
                         col = int((click_x - MARGIN) // (CELL_SIZE + MARGIN))
                         if 0 <= col < GRID_WIDTH:
                             self.input_column = col
-                
+
     def toggle_fullscreen(self):
-        """Toggle between windowed and fullscreen mode."""
         self.is_fullscreen = not self.is_fullscreen
-        
+
         if self.is_fullscreen:
-            # Get display info for fullscreen
             info = pygame.display.Info()
             screen_w, screen_h = info.current_w, info.current_h
-            
-            # Calculate scale to fit while maintaining aspect ratio
+
             scale_x = screen_w / self.base_width
             scale_y = screen_h / self.base_height
             self.scale_factor = min(scale_x, scale_y)
-            
-            # Calculate offset to center the game
             scaled_w = int(self.base_width * self.scale_factor)
             scaled_h = int(self.base_height * self.scale_factor)
             self.screen_offset = ((screen_w - scaled_w) // 2, (screen_h - scaled_h) // 2)
-            
+
             self.screen = pygame.display.set_mode((screen_w, screen_h), pygame.FULLSCREEN)
         else:
             self.scale_factor = 1.0
             self.screen_offset = (0, 0)
             self.screen = pygame.display.set_mode((self.base_width, self.base_height))
-    
+
     def get_game_mouse_pos(self):
-        """Convert screen mouse position to game coordinates."""
         mx, my = pygame.mouse.get_pos()
-        # Adjust for fullscreen offset and scale
         gx = (mx - self.screen_offset[0]) / self.scale_factor
         gy = (my - self.screen_offset[1]) / self.scale_factor
         return (int(gx), int(gy))
-                
+
     def reset_game(self):
         current_score = self.game_logic.get_score()
         if current_score > self.high_score:
             self.high_score = current_score
-            
+
         self.game_logic.reset()
         self.game_is_over = False
         self.input_column = None
@@ -544,10 +468,9 @@ class GameUI:
 
         shadow = self.game_over_font.render("GAME OVER", True, (40, 40, 40))
         text = self.game_over_font.render("GAME OVER", True, (255, 100, 100))
-        
+
         center_x = self.window_width // 2
         center_y = self.window_height // 2 - 40
-        
         self.render_surface.blit(shadow, shadow.get_rect(center=(center_x + 3, center_y + 3)))
         self.render_surface.blit(text, text.get_rect(center=(center_x, center_y)))
 
@@ -578,8 +501,6 @@ class GameUI:
         )
 
     def trigger_drop_animation(self, col, value):
-        """Trigger a drop animation for a new block (from bottom moving up)."""
-        # Find target row (first empty slot from top)
         matrix = self.game_logic.get_matrix()
         target_row = 0
         for row in range(GRID_LENGTH):
@@ -588,21 +509,17 @@ class GameUI:
                 break
             elif row == GRID_LENGTH - 1:
                 target_row = row
-        
-        # Start from below the grid, animate upward
+
         start_y = self.window_height - self.bottom_padding + CELL_SIZE
         target_y = self.top_padding + MARGIN + target_row * (CELL_SIZE + MARGIN)
-        
         self.drop_animations.append((col, start_y, target_y, value, pygame.time.get_ticks()))
 
     def detect_and_trigger_animations(self, old_matrix, new_matrix, merged_col):
-        """Detect which cells merged and trigger fly-to-target animations."""
         current_time = pygame.time.get_ticks()
         
         if old_matrix is None:
             return
-        
-        # Find cells that received merge results (targets)
+
         target_cells = {}
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
@@ -610,32 +527,26 @@ class GameUI:
                 new_val = new_matrix[row][col]
                 
                 if new_val != 0 and new_val != old_val and new_val > old_val:
-                    # This cell received a merge result
                     target_cells[(col, row)] = new_val
-                    # Delay the pulse animation to start after merge animations finish
                     self.pulse_animations.append((col, row, current_time + 200, new_val))
-        
-        # Find cells that were consumed and animate them flying to nearest target
+
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 old_val = old_matrix[row][col]
                 new_val = new_matrix[row][col]
-                
+
                 if old_val != 0 and new_val == 0:
-                    # This cell was consumed - find nearest target with matching merge value
                     best_target = None
                     best_dist = float('inf')
-                    
+
                     for (t_col, t_row), t_val in target_cells.items():
-                        # Target value should be double of source (or more for multi-merge)
                         if t_val >= old_val * 2:
                             dist = abs(col - t_col) + abs(row - t_row)
                             if dist < best_dist:
                                 best_dist = dist
                                 best_target = (t_col, t_row)
-                    
+
                     if best_target:
-                        # Animate flying to target
                         self.merge_animations.append(
                             (col, row, best_target[0], best_target[1], current_time, old_val)
                         )
@@ -643,7 +554,6 @@ class GameUI:
     def run(self):
         while True:
             matrix = self.game_logic.get_matrix()
-            
             if game_over(matrix, self.next_value):
                 self.game_is_over = True
                 if self.game_logic.get_score() > self.high_score:
@@ -659,10 +569,7 @@ class GameUI:
             show_message = False
 
             if not self.game_is_over and self.input_column is not None:
-                # Store matrix before move for animation detection
                 old_matrix = [row[:] for row in matrix]
-                
-                # Trigger drop animation
                 self.trigger_drop_animation(self.input_column, self.next_value)
                 
                 merged, count = self.game_logic.add_to_column(
@@ -672,9 +579,8 @@ class GameUI:
                 if not merged:
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
-                    self.drop_animations = []  # Cancel drop if failed
+                    self.drop_animations = []
                 else:
-                    # Get new matrix and detect changes
                     new_matrix = self.game_logic.get_matrix()
                     self.detect_and_trigger_animations(old_matrix, new_matrix, self.input_column)
                     

@@ -23,9 +23,12 @@ def dynamic_random_choices(max_value):
     random_choice = set()
     count = 0
     max_value = max_value // 2 // 2
-    
+    random_choice.add(max_value)
+
     while True:
-        if count == 6:
+        if count == 5:
+            break
+        if max_value < 2:
             break
         max_value = max_value // 2
         random_choice.add(max_value)
@@ -42,14 +45,19 @@ def random_value(matrix, score):
             if matrix[i][j] != 0:
                 max_value = max(max_value, matrix[i][j])
 
-    if max_value >= 1024:
+    if max_value >= 512:
         random_choices = dynamic_random_choices(max_value)
         max_value = random_choices[0]
+
         while True:
             if max_value < 2:
                 break
+            if max_value == 2:
+                matrix = remove_redundant(matrix, max_value)
+                break
             max_value = max_value // 2
             matrix = remove_redundant(matrix, max_value)
+
         return random.choices(random_choices)[0], matrix
     else:
         return temp_random_choices(score), matrix
