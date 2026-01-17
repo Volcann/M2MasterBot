@@ -1,6 +1,10 @@
+import csv
+import os
+import json
 import pygame
 import math
 import colorsys
+from datetime import datetime
 
 from config.constants import (
     CELL_SIZE, MARGIN,
@@ -185,6 +189,33 @@ class GameUI:
         if t == 0 or t == 1:
             return t
         return pow(2, -10 * t) * math.sin((t * 10 - 0.75) * (2 * math.pi) / 3) + 1
+
+    def _save_game_over_to_csv(self):
+        try:
+            matrix = self.game_logic.get_matrix()
+            highest_tile = max(max(row) for row in matrix) if matrix else 0
+            score = self.game_logic.get_score()
+            timestamp = datetime.utcnow().isoformat()
+
+            row = {
+                "timestamp": timestamp,
+                "score": score,
+                "high_score": self.high_score,
+                "highest_tile": highest_tile,
+                "matrix": json.dumps(matrix)
+            }
+
+            file_path = "analysis/data/raw.csv"
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)   # <- minimal change: ensure dirs exist
+            file_exists = os.path.exists(file_path)
+
+            with open(file_path, "a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=list(row.keys()))
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(row)
+        except Exception as e:
+            print("Failed to save game data to CSV:", e)
 
     def draw_matrix(self):
         self.render_surface.fill(self.BG_DARK)
@@ -570,6 +601,7 @@ class GameUI:
                     if self.game_logic.get_score() > self.high_score:
                         self.high_score = self.game_logic.get_score()
                     self.game_over_time = pygame.time.get_ticks()
+                    self._save_game_over_to_csv()
 
                 if self.game_over_time and (current_time - self.game_over_time) >= 2000:
                     self.reset_game()
