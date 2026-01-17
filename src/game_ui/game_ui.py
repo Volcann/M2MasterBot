@@ -92,6 +92,7 @@ class GameUI:
 
         self.restart_button_rect = None
         self.fullscreen_button_rect = None
+        self.game_over_time = None
 
     def get_cell_color(self, value):
         if value == 0:
@@ -458,6 +459,7 @@ class GameUI:
         self.prev_matrix = None
         self.temp_message = None
         self.temp_message_time = 0
+        self.game_over_time = None
 
     def draw_game_over(self):
         overlay = pygame.Surface(
@@ -479,11 +481,18 @@ class GameUI:
         )
         self.render_surface.blit(score_text, score_text.get_rect(center=(center_x, center_y + 50)))
 
-        hint_text = self.sub_font.render(
-            "Click RESTART or press R", True, self.TEXT_DIM
-        )
-        self.render_surface.blit(hint_text, hint_text.get_rect(center=(center_x, center_y + 90)))
+        if self.game_over_time:
+            elapsed_ms = pygame.time.get_ticks() - self.game_over_time
+            seconds_left = max(0, 5 - (elapsed_ms // 1000))
+            hint_text = self.sub_font.render(
+                f"Restarting in {seconds_left}...", True, self.TEXT_DIM
+            )
+        else:
+            hint_text = self.sub_font.render(
+                "Click RESTART or press R", True, self.TEXT_DIM
+            )
 
+        self.render_surface.blit(hint_text, hint_text.get_rect(center=(center_x, center_y + 90)))
         pygame.display.flip()
 
     def draw_temp_message(self):
@@ -516,7 +525,7 @@ class GameUI:
 
     def detect_and_trigger_animations(self, old_matrix, new_matrix, merged_col):
         current_time = pygame.time.get_ticks()
-        
+
         if old_matrix is None:
             return
 
@@ -525,7 +534,7 @@ class GameUI:
             for col in range(GRID_WIDTH):
                 old_val = old_matrix[row][col]
                 new_val = new_matrix[row][col]
-                
+
                 if new_val != 0 and new_val != old_val and new_val > old_val:
                     target_cells[(col, row)] = new_val
                     self.pulse_animations.append((col, row, current_time + 200, new_val))
@@ -553,14 +562,21 @@ class GameUI:
 
     def run(self):
         while True:
+            current_time = pygame.time.get_ticks()
             matrix = self.game_logic.get_matrix()
             if game_over(matrix, self.next_value):
-                self.game_is_over = True
-                if self.game_logic.get_score() > self.high_score:
-                    self.high_score = self.game_logic.get_score()
-                self.draw_game_over()
+                if not self.game_is_over:
+                    self.game_is_over = True
+                    if self.game_logic.get_score() > self.high_score:
+                        self.high_score = self.game_logic.get_score()
+                    self.game_over_time = pygame.time.get_ticks()
 
-            if self.game_is_over:
+                if self.game_over_time and (current_time - self.game_over_time) >= 2000:
+                    self.reset_game()
+                    self.clock.tick(60)
+                    continue
+
+                self.draw_game_over()
                 self.handle_events()
                 self.clock.tick(60)
                 continue
@@ -571,11 +587,11 @@ class GameUI:
             if not self.game_is_over and self.input_column is not None:
                 old_matrix = [row[:] for row in matrix]
                 self.trigger_drop_animation(self.input_column, self.next_value)
-                
+
                 merged, count = self.game_logic.add_to_column(
                     self.next_value, self.input_column
                 )
-                
+
                 if not merged:
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
@@ -583,7 +599,7 @@ class GameUI:
                 else:
                     new_matrix = self.game_logic.get_matrix()
                     self.detect_and_trigger_animations(old_matrix, new_matrix, self.input_column)
-                    
+
                     self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
 
