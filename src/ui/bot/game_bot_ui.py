@@ -1,8 +1,7 @@
 import pygame
 
-from game_ui.game_ui import GameUI
-from game_logic.game_logic import GameLogic
-from M2Bot.game_bot import GameBot
+from ui.game.game_ui import GameUI
+from bot.game_bot import GameBot
 
 
 class BotGameUI(GameUI):
@@ -10,7 +9,7 @@ class BotGameUI(GameUI):
         super().__init__(game_logic)
         self.bot = GameBot()
         self.last_move_time = 0
-        self.move_delay = 500
+        self.move_delay = 200
 
     def handle_events(self):
         super().handle_events()
@@ -22,9 +21,3 @@ class BotGameUI(GameUI):
                 best_col = self.bot.solve(matrix, self.next_value)
                 self.input_column = best_col
                 self.last_move_time = current_time
-
-
-if __name__ == "__main__":
-    game_logic = GameLogic()
-    game_ui = BotGameUI(game_logic)
-    game_ui.run()
