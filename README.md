@@ -1,7 +1,3 @@
-Got you. Since this is a full-featured **2048-inspired block game** with AI bot, animations, and Pygame UI, we can make a polished, developer-friendly, and visually appealing README. Here’s a clean draft:
-
----
-
 # M2 Block 🎮
 
 **M2 Block** is a modern twist on the classic 2048 puzzle game. Place tiles strategically to merge them, score points, and reach the highest tile! The game features a smooth Pygame interface, animated tile merges, drop effects, and an intelligent AI bot that can play for you.
@@ -87,40 +83,11 @@ best_column = bot.solve(matrix, next_tile_value)
 
 ---
 
-## 📦 Project Structure
-
-```
-m2-block/
-├── config/
-│   └── constants.py        # Game constants (grid size, cell size, colors)
-├── game_logic/
-│   ├── game_bot.py         # AI bot for strategic moves
-│   ├── game_logic.py       # Core game logic and scoring
-│   └── utils/
-│       └── utils.py        # Merge, rearrange, random tile generator, etc.
-├── main.py                 # Entry point to run the game
-├── assets/                 # Optional images, fonts, icons
-├── README.md
-└── requirements.txt        # Python dependencies
-```
-
----
-
 ## 🛠 Tech Stack
 
 * **Python 3.10+**
 * **Pygame** for graphics and animations
 * Modular design for AI and game logic separation
-
----
-
-## 🚀 To-Do / Future Features
-
-* **Undo Move** button
-* **Save/Load Game Progress**
-* **Customizable Grid Size & Themes**
-* **Enhanced AI** with deeper lookahead
-* **Leaderboards** for online score tracking
 
 ---
 
@@ -136,50 +103,3 @@ m2-block/
 This project is open-source under the **MIT License**.
 
 ---
-
-If you want, I can also make a **more visual README with GIFs/screenshots** of gameplay, color-coded sections, and AI bot in action — that makes it much more “professional” for GitHub.
-
-Do you want me to do that next?
-
-
-.
-├── .github/                  # CI templates, workflows
-│   └── workflows
-│       └── ci.yml
-├── .gitignore
-├── pyproject.toml            # build system, deps, formatting config
-├── README.md
-├── LICENSE
-├── Makefile                  # dev commands (test, lint, build)
-├── Dockerfile
-├── docker-compose.yml
-├── docs/                     # user + developer docs (mkdocs or sphinx)
-├── scripts/                  # small CLI helpers (dev-only)
-│   └── run_local.sh
-├── examples/                 # runnable examples / quickstart
-│   └── play_sample.py
-├── src/
-│   └── m2bot/                # package root (lowercase)
-│       ├── __init__.py
-│       ├── config/
-│       │   ├── __init__.py
-│       │   └── constants.py
-│       ├── core/             # game engine and domain logic
-│       │   ├── __init__.py
-│       │   └── game.py
-│       ├── bot/              # AI / decision agents
-│       │   ├── __init__.py
-│       │   └── agent.py
-│       ├── ui/               # UI adapters (CLI, GUI)
-│       │   ├── __init__.py
-│       │   └── terminal.py
-│       ├── utils/            # small helpers (I/O, metrics)
-│       │   ├── __init__.py
-│       │   └── io.py
-│       └── data/             # packaged small datasets (if any)
-│           └── bot_stats.csv
-├── tests/
-│   ├── __init__.py
-│   ├── test_game.py
-│   └── test_agent.py
-└── .venv/ (ignored)

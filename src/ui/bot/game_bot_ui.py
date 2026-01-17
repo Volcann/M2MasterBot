@@ -1,7 +1,7 @@
 import pygame
 
-from game_ui.game_ui import GameUI
-from M2Bot.game_bot.game_bot import GameBot
+from ui.game.game_ui import GameUI
+from bot.game_bot import GameBot
 
 
 class BotGameUI(GameUI):

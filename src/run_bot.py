@@ -1,5 +1,5 @@
-from game_logic.game_logic import GameLogic
-from M2Bot.game_bot_ui.game_bot_ui import BotGameUI
+from core.game_logic import GameLogic
+from ui.bot.game_bot_ui import BotGameUI
 
 if __name__ == "__main__":
     game_logic = GameLogic()

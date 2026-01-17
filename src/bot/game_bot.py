@@ -2,7 +2,7 @@ import copy
 import math
 
 from config.constants import GRID_WIDTH, GRID_LENGTH
-from game_logic.utils.utils import rearrange, merge_column
+from core.utils.utils import rearrange, merge_column
 
 
 class GameBot:

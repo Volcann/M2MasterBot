@@ -1,5 +1,5 @@
-from game_logic.game_logic import GameLogic
-from game_ui.game_ui import GameUI
+from core.game_logic import GameLogic
+from ui.game.game_ui import GameUI
 
 if __name__ == "__main__":
     game_logic = GameLogic()

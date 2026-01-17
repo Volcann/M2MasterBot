@@ -8,7 +8,7 @@ from config.constants import (
     GRID_LENGTH,
     GRID_WIDTH
 )
-from game_logic.utils.utils import game_over, rearrange
+from core.utils.utils import game_over, rearrange
 
 
 class GameUI:
