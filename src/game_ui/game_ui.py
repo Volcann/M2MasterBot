@@ -264,20 +264,20 @@ class GameUI:
             col, current_y, target_y, value, start_time = anim
             elapsed = current_time - start_time
             duration = 150
-            
+
             if elapsed >= duration:
                 self.drop_animations.remove(anim)
                 continue
-            
+
             progress = self.ease_out_cubic(elapsed / duration)
             y = current_y + (target_y - current_y) * progress
-            
+
             x = MARGIN + col * (CELL_SIZE + MARGIN)
             rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-            
+
             color = self.get_cell_color(value)
             self.draw_glow_rect(self.render_surface, color, rect, 14)
-            
+
             font = self.get_font_for_value(value, CELL_SIZE)
             text_surface = font.render(str(value), True, self.TEXT_LIGHT)
             text_rect = text_surface.get_rect(center=rect.center)
