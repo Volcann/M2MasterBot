@@ -18,21 +18,21 @@ class GameBot:
         best_score = -float('inf')
         best_column = 0
 
-        for colomn in range(GRID_WIDTH):
+        for column in range(GRID_WIDTH):
             temp_matrix = copy.deepcopy(matrix)
-            score_gain, distinct_merges = self.simulate_move(temp_matrix, colomn, next_value)
+            score_gain, distinct_merges = self.simulate_move(temp_matrix, column, next_value)
 
             if score_gain == -1:
                 continue
 
-            heuristic_score = self.evaluate_board(colomn, temp_matrix, score_gain, distinct_merges)
+            heuristic_score = self.evaluate_board(column, temp_matrix, score_gain, distinct_merges)
             if heuristic_score > best_score:
                 best_score = heuristic_score
-                best_column = colomn
+                best_column = column
 
         return best_column
 
-    def evaluate_board(self, colomn, matrix, move_score, merge_count):
+    def evaluate_board(self, column, matrix, move_score, merge_count):
         score = 0
         score += move_score * self.W_SCORE
 
@@ -42,7 +42,7 @@ class GameBot:
         score += self.count_empty_cells(matrix) * self.W_EMPTY
         score += self.calculate_monotonicity(matrix) * self.W_MONOTONICITY
         score -= self.calculate_smoothness(matrix) * self.W_SMOOTHNESS
-        score += self.corner_bonus(colomn, matrix)
+        score += self.corner_bonus(column, matrix)
         score += self.column_stack_penalty(matrix)
 
         return score
@@ -51,30 +51,30 @@ class GameBot:
         penalty = 0
         threshold = 1
 
-        for col in range(GRID_WIDTH):
-            empty_count = sum(1 for row in range(GRID_LENGTH) if matrix[row][col] == 0)
+        for column in range(GRID_WIDTH):
+            empty_count = sum(1 for row in range(GRID_LENGTH) if matrix[row][column] == 0)
             if empty_count <= threshold:
                 penalty -= 100
-        # TODO: check if this colomn can merge values if no then its dangours
+        # TODO: check if this column can merge values if no then its dangours
         return penalty
 
-    def corner_bonus(self, colomn, matrix):
+    def corner_bonus(self, column, matrix):
         max_value = 0
         max_position = (0, 0)
         score = 0
 
         for row in range(GRID_LENGTH):
-            if matrix[row][colomn] > max_value:
-                max_value = matrix[row][colomn]
-                max_position = (row, colomn)
+            if matrix[row][column] > max_value:
+                max_value = matrix[row][column]
+                max_position = (row, column)
 
-        if max_position == (0, colomn):
+        if max_position == (0, column):
             score += self.W_CORNER * 2
-        elif max_position == (1, colomn):
+        elif max_position == (1, column):
             score += self.W_CORNER
-        elif max_position == (2, colomn):
+        elif max_position == (2, column):
             score -= self.W_CORNER
-        elif max_position == (3, colomn):
+        elif max_position == (3, column):
             score -= self.W_CORNER * 2
 
         return score
@@ -82,9 +82,9 @@ class GameBot:
     def count_empty_cells(self, matrix):
         count_zero = 0
 
-        for i in range(GRID_LENGTH):
-            for j in range(GRID_WIDTH):
-                if matrix[i][j] == 0:
+        for row in range(GRID_LENGTH):
+            for column in range(GRID_WIDTH):
+                if matrix[row][column] == 0:
                     count_zero += 1
 
         return count_zero
@@ -92,10 +92,10 @@ class GameBot:
     def calculate_monotonicity(self, matrix):
         score = 0
 
-        for colomn in range(GRID_WIDTH):
+        for column in range(GRID_WIDTH):
             for row in range(GRID_LENGTH - 1):
-                current_value = matrix[row][colomn]
-                next_value = matrix[row+1][colomn]
+                current_value = matrix[row][column]
+                next_value = matrix[row+1][column]
 
                 if current_value >= next_value:
                     score += 1
@@ -108,16 +108,16 @@ class GameBot:
         smoothness = 0
 
         for row in range(GRID_LENGTH):
-            for colomn in range(GRID_WIDTH):
-                if matrix[row][colomn] > 0:
-                    value = math.log2(matrix[row][colomn])
+            for column in range(GRID_WIDTH):
+                if matrix[row][column] > 0:
+                    value = math.log2(matrix[row][column])
 
-                    if colomn + 1 < GRID_WIDTH and matrix[row][colomn+1] > 0:
-                        neighbor = math.log2(matrix[row][colomn + 1])
+                    if column + 1 < GRID_WIDTH and matrix[row][column+1] > 0:
+                        neighbor = math.log2(matrix[row][column + 1])
                         smoothness += abs(value - neighbor)
 
-                    if row + 1 < GRID_LENGTH and matrix[row + 1][colomn] > 0:
-                        neighbor = math.log2(matrix[row + 1][colomn])
+                    if row + 1 < GRID_LENGTH and matrix[row + 1][column] > 0:
+                        neighbor = math.log2(matrix[row + 1][column])
                         smoothness += abs(value - neighbor)
 
         return smoothness
@@ -159,9 +159,9 @@ class GameBot:
             else:
                 index += 1
 
-        for i in range(GRID_WIDTH):
+        for row in range(GRID_WIDTH):
             while True:
-                merged, _, score_delta, count = merge_column(matrix, 0, i)
+                merged, _, score_delta, count = merge_column(matrix, 0, row)
                 score_gained += score_delta
 
                 if not merged:
