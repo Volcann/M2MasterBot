@@ -5,6 +5,9 @@ from config.constants import GRID_LENGTH, GRID_WIDTH
 
 
 def _spawn_weighted_choice(choices):
+    if not choices:
+        choices = [2, 4]
+
     if set(choices) == {2, 4} or choices == [2, 4]:
         return random.choices(choices, weights=[90, 10], k=1)[0]
 
@@ -40,6 +43,9 @@ def _get_remove_values(max_value):
 
 
 def initial_random_choices(max_value):
+    if max_value < 2:
+        return [2, 4]
+
     if max_value == 256:
         max_value = 128
     if max_value == 512:
@@ -49,8 +55,6 @@ def initial_random_choices(max_value):
     if max_value > 2:
         max_value = max_value // 2
         random_choice.add(max_value)
-    elif max_value < 2:
-        return {2, 4}
 
     while True:
         if max_value < 2:
@@ -69,16 +73,26 @@ def dynamic_random_choices(max_value):
     if max_value > 4:
         max_value = max_value // 2 // 2 // 2
 
-    if max_value < 2:
-        return {2, 4}
+        if max_value >= 8192:
+            max_value = max_value // 2
+            random_choice.add(max_value)
+        else:
+            random_choice.add(max_value)
 
+    if max_value < 2:
+        return [2, 4]
+
+    count = 0
     while True:
         if max_value < 2:
+            break
+        if count >= 5:
             break
         max_value = max_value // 2
         if max_value < 2:
             break
         random_choice.add(max_value)
+        count += 1
 
     random_choices = sorted(list(random_choice))
     return random_choices
@@ -103,7 +117,7 @@ def random_value(matrix, score):
         return _spawn_weighted_choice(random_choices), matrix
     else:
         random_choices = initial_random_choices(max_value)
-        if len(random_choices) == 1:
+        if not random_choices:
             random_choices = [2, 4]
         print(random_choices)
         return _spawn_weighted_choice(random_choices), matrix
