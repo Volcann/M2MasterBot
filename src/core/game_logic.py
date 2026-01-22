@@ -8,11 +8,11 @@ from core.utils.utils import (
 
 class GameLogic:
     def __init__(self):
-        self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
+        self._matrix = [[0] * GRID_WIDTH for i in range(GRID_LENGTH)]
         self._score = 0
 
     def _reset(self):
-        self._matrix = [[0] * GRID_LENGTH for i in range(GRID_WIDTH)]
+        self._matrix = [[0] * GRID_WIDTH for i in range(GRID_LENGTH)]
         self._score = 0
 
     def reset(self):

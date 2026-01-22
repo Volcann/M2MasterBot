@@ -113,10 +113,11 @@ class GameUI:
         return (int(r * 255), int(g * 255), int(b * 255))
 
     def get_font_for_value(self, value, max_width):
-        text = str(value)
+        text = self.format_value_label(value)
         padding = 10
-        available_width = max_width - padding * 2
+        available_width = max(0, max_width - padding * 2)
 
+        # Prefer larger sizes first
         for size in range(44, 10, -2):
             if size in self.fonts:
                 font = self.fonts[size]
@@ -124,7 +125,8 @@ class GameUI:
                 if text_width <= available_width:
                     return font
 
-        return self.fonts[12]
+        # Fallback smallest font
+        return self.fonts[min(self.fonts.keys())]
 
     def show_temp_message(self, text):
         self.temp_message = text
@@ -138,6 +140,50 @@ class GameUI:
         glow_rect = rect.inflate(glow_size, glow_size)
         pygame.draw.rect(surface, glow_color, glow_rect, border_radius=radius + 2, width=2)
         pygame.draw.rect(surface, color, rect, border_radius=radius)
+
+    def render_label(self, font, value, color, alpha=255):
+        label = self.format_value_label(value)
+        text_surface = font.render(label, True, color)
+        if alpha != 255:
+            temp = pygame.Surface(text_surface.get_size(), pygame.SRCALPHA)
+            temp.blit(text_surface, (0, 0))
+            temp.set_alpha(alpha)
+            return temp
+        return text_surface
+
+    def format_value_label(self, value):
+        if value is None:
+            return ""
+        try:
+            v = int(value)
+        except Exception:
+            return str(value)
+
+        abs_v = abs(v)
+        sign = "-" if v < 0 else ""
+
+        # Suffixes for thousands (1000^1, 1000^2, ...). Uppercase to match your mock.
+        suffixes = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
+
+        # small numbers
+        if abs_v < 1_000:
+            return f"{v}"
+
+        # determine suffix index (thousands groups)
+        # floor(log10(abs_v) / 3) gives the thousands-group index
+        index = int(math.floor(math.log10(abs_v) / 3))
+        if index >= len(suffixes):
+            # too big for our suffix list, fallback to scientific
+            return f"{v:.2e}"
+
+        div = 1000 ** index
+        if abs_v % div == 0:
+            # exact integer after dividing -> show no decimal
+            return f"{sign}{abs_v // div}{suffixes[index]}"
+        else:
+            # show one decimal (like "1.2M")
+            s = f"{abs_v / div:.1f}".rstrip("0").rstrip(".")
+            return f"{sign}{s}{suffixes[index]}"
 
     def draw_header(self):
         title = self.title_font.render("M2 BLOCK", True, self.ACCENT)
@@ -284,7 +330,7 @@ class GameUI:
 
             if scaled_size > 30:
                 font = self.get_font_for_value(value, scaled_size)
-                text_surface = font.render(str(value), True, (*self.TEXT_LIGHT[:3], alpha))
+                text_surface = self.render_label(font, value, self.TEXT_LIGHT[:3], alpha)
                 text_rect = text_surface.get_rect(center=rect.center)
                 temp_text = pygame.Surface(text_surface.get_size(), pygame.SRCALPHA)
                 temp_text.blit(text_surface, (0, 0))
@@ -310,7 +356,7 @@ class GameUI:
             self.draw_glow_rect(self.render_surface, color, rect, 14)
 
             font = self.get_font_for_value(value, CELL_SIZE)
-            text_surface = font.render(str(value), True, self.TEXT_LIGHT)
+            text_surface = self.render_label(font, value, self.TEXT_LIGHT)
             text_rect = text_surface.get_rect(center=rect.center)
             self.render_surface.blit(text_surface, text_rect)
 
@@ -346,7 +392,7 @@ class GameUI:
                 self.draw_glow_rect(self.render_surface, color, rect, 14)
 
                 font = self.get_font_for_value(value, rect.width)
-                text_surface = font.render(str(value), True, self.TEXT_LIGHT)
+                text_surface = self.render_label(font, value, self.TEXT_LIGHT)
                 text_rect = text_surface.get_rect(center=rect.center)
                 self.render_surface.blit(text_surface, text_rect)
 
@@ -384,7 +430,7 @@ class GameUI:
         self.draw_glow_rect(self.render_surface, next_color, next_rect, 14)
 
         font = self.get_font_for_value(self.next_value, CELL_SIZE)
-        next_text = font.render(str(self.next_value), True, self.TEXT_LIGHT)
+        next_text = self.render_label(font, self.next_value, self.TEXT_LIGHT)
         self.render_surface.blit(next_text, next_text.get_rect(center=next_rect.center))
         button_width, button_height = 100, 36
         self.restart_button_rect = pygame.Rect(

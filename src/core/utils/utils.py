@@ -4,71 +4,129 @@ from queue import Queue
 from config.constants import GRID_LENGTH, GRID_WIDTH
 
 
-def temp_random_choices(score):
-    if score < 50:
-        random_choices = [2, 4, 8]
-    elif score < 100:
-        random_choices = [2, 4, 8, 16]
-    elif score < 200:
-        random_choices = [2, 4, 8, 16, 32]
-    elif score < 300:
-        random_choices = [2, 4, 8, 16, 32, 64]
-    else:
-        random_choices = [2, 4, 8, 16, 32, 64]
+def _spawn_weighted_choice(choices):
+    if set(choices) == {2, 4} or choices == [2, 4]:
+        return random.choices(choices, weights=[90, 10], k=1)[0]
 
-    return random.choices(random_choices)[0]
+    weights = []
+    for value in choices:
+        if value == 2:
+            weight = 100
+        elif value == 4:
+            weight = 50
+        else:
+            weight = max(1, int(200 / value))
+        weights.append(weight)
+
+    return random.choices(choices, weights=weights, k=1)[0]
+
+
+def _get_remove_values(max_value):
+    if max_value < 1024:
+        return 0
+
+    removed = 2
+
+    while max_value > 1024:
+        max_value //= 2
+        removed *= 2
+
+    if removed > 8:
+        removed //= 2
+        if removed > 32:
+            removed //= 2
+
+    return removed
+
+
+def initial_random_choices(max_value):
+    if max_value == 256:
+        max_value = 128
+    if max_value == 512:
+        max_value = 128
+
+    random_choice = set()
+    if max_value > 2:
+        max_value = max_value // 2
+        random_choice.add(max_value)
+    elif max_value < 2:
+        return {2, 4}
+
+    while True:
+        if max_value < 2:
+            break
+        max_value = max_value // 2
+        if max_value < 2:
+            break
+        random_choice.add(max_value)
+
+    random_choices = sorted(list(random_choice))
+    return random_choices
 
 
 def dynamic_random_choices(max_value):
     random_choice = set()
-    count = 0
-    max_value = max_value // 2 // 2
-    random_choice.add(max_value)
+    if max_value > 4:
+        max_value = max_value // 2 // 2 // 2
+
+    if max_value < 2:
+        return {2, 4}
 
     while True:
-        if count == 5:
-            break
         if max_value < 2:
             break
         max_value = max_value // 2
+        if max_value < 2:
+            break
         random_choice.add(max_value)
-        count += 1
 
     random_choices = sorted(list(random_choice))
     return random_choices
 
 
 def random_value(matrix, score):
-    max_value = 2
+    max_value = 0
     for i in range(GRID_LENGTH):
         for j in range(GRID_WIDTH):
             if matrix[i][j] != 0:
                 max_value = max(max_value, matrix[i][j])
 
-    if max_value >= 512:
+    if max_value == 0:
+        random_choices = [2, 4]
+        print(random_choices)
+        return _spawn_weighted_choice(random_choices), matrix
+    elif max_value >= 1024:
         random_choices = dynamic_random_choices(max_value)
-        max_value = random_choices[0]
-
-        while True:
-            if max_value < 2:
-                break
-            if max_value == 2:
-                matrix = remove_redundant(matrix, max_value)
-                break
-            max_value = max_value // 2
-            matrix = remove_redundant(matrix, max_value)
-
-        return random.choices(random_choices)[0], matrix
+        remove_values = _get_remove_values(max_value)
+        random_choices, matrix = remove_redundant(matrix, random_choices, remove_values)
+        print(random_choices)
+        return _spawn_weighted_choice(random_choices), matrix
     else:
-        return temp_random_choices(score), matrix
+        random_choices = initial_random_choices(max_value)
+        if len(random_choices) == 1:
+            random_choices = [2, 4]
+        print(random_choices)
+        return _spawn_weighted_choice(random_choices), matrix
 
 
-def remove_redundant(matrix, value):
-    for i in range(GRID_LENGTH):
-        for j in range(GRID_WIDTH):
-            if matrix[i][j] == value:
-                matrix[i][j] = 0
-    return matrix
+def remove_redundant(matrix, random_choices, remove_values):
+    remove_value_list = []
+    while True:
+        if remove_values < 2:
+            break
+        remove_value_list.append(remove_values)
+        remove_values = remove_values // 2
+
+    for value in remove_value_list:
+        if value in random_choices:
+            random_choices.remove(value)
+
+        for i in range(GRID_LENGTH):
+            for j in range(GRID_WIDTH):
+                if matrix[i][j] == value:
+                    matrix[i][j] = 0
+
+    return random_choices, matrix
 
 
 def print_matrix(matrix):
@@ -79,17 +137,17 @@ def print_matrix(matrix):
 
 def rearrange(matrix, column=None):
     if column is None:
-        for i in range(GRID_LENGTH):
+        for i in range(GRID_WIDTH):
             queue = Queue()
             non_zero_value = 0
 
-            for j in range(GRID_WIDTH):
+            for j in range(GRID_LENGTH):
                 if matrix[j][i] == 0:
                     continue
                 else:
                     queue.put(matrix[j][i])
 
-            for j in range(GRID_WIDTH):
+            for j in range(GRID_LENGTH):
                 matrix[j][i] = 0
 
             non_zero_value = queue.qsize()
@@ -125,7 +183,7 @@ def game_over(matrix, value):
             if matrix[j][i] == 0:
                 return False
 
-    for i in range(GRID_LENGTH):
+    for i in range(GRID_WIDTH):
         if matrix[(GRID_WIDTH - 1)][i] == value:
             return False
 
@@ -183,8 +241,8 @@ def merging_values(matrix, score, row, column, value):
 def merge_column(matrix, score, column=-1):
     count = 0
     if column == -1:
-        for i in range(GRID_LENGTH):
-            for j in range(GRID_WIDTH):
+        for i in range(GRID_WIDTH):
+            for j in range(GRID_LENGTH):
                 value = matrix[j][i]
                 if value == 0:
                     continue
@@ -192,7 +250,7 @@ def merge_column(matrix, score, column=-1):
                 if merged:
                     return True, matrix, score, count
     else:
-        for j in range(GRID_WIDTH):
+        for j in range(GRID_LENGTH):
             value = matrix[j][column]
             if value == 0:
                 continue
