@@ -12,7 +12,7 @@ from config.constants import (
     GRID_LENGTH,
     GRID_WIDTH
 )
-from core.utils.utils import game_over, rearrange
+from core.utils.utils import game_over, rearrange, remove_redundant
 
 
 class GameUI:
@@ -44,7 +44,7 @@ class GameUI:
         self.game_logic = game_logic
 
         self.top_padding = 90
-        self.bottom_padding = 140
+        self.bottom_padding = 110
 
         self.window_width = GRID_WIDTH * (CELL_SIZE + MARGIN) + MARGIN
         self.window_height = (
@@ -73,7 +73,7 @@ class GameUI:
         }
         self.score_font = pygame.font.SysFont("Arial", SCORE_FONT_SIZE, bold=True)
         self.title_font = pygame.font.SysFont("Arial", 28, bold=True)
-        self.button_font = pygame.font.SysFont("Arial", 18, bold=True)
+        self.button_font = pygame.font.SysFont("Arial", 20, bold=True)
         self.game_over_font = pygame.font.SysFont("Arial", 48, bold=True)
         self.sub_font = pygame.font.SysFont("Arial", 20)
 
@@ -117,7 +117,6 @@ class GameUI:
         padding = 10
         available_width = max(0, max_width - padding * 2)
 
-        # Prefer larger sizes first
         for size in range(44, 10, -2):
             if size in self.fonts:
                 font = self.fonts[size]
@@ -125,7 +124,6 @@ class GameUI:
                 if text_width <= available_width:
                     return font
 
-        # Fallback smallest font
         return self.fonts[min(self.fonts.keys())]
 
     def show_temp_message(self, text):
@@ -154,6 +152,7 @@ class GameUI:
     def format_value_label(self, value):
         if value is None:
             return ""
+
         try:
             v = int(value)
         except Exception:
@@ -161,36 +160,24 @@ class GameUI:
 
         abs_v = abs(v)
         sign = "-" if v < 0 else ""
-
-        # Suffixes for thousands (1000^1, 1000^2, ...). Uppercase to match your mock.
         suffixes = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
 
-        # small numbers
-        if abs_v < 1_000:
+        if abs_v < 1_0000:
             return f"{v}"
 
-        # determine suffix index (thousands groups)
-        # floor(log10(abs_v) / 3) gives the thousands-group index
         index = int(math.floor(math.log10(abs_v) / 3))
         if index >= len(suffixes):
-            # too big for our suffix list, fallback to scientific
             return f"{v:.2e}"
 
         div = 1000 ** index
-        if abs_v % div == 0:
-            # exact integer after dividing -> show no decimal
-            return f"{sign}{abs_v // div}{suffixes[index]}"
-        else:
-            # show one decimal (like "1.2M")
-            s = f"{abs_v / div:.1f}".rstrip("0").rstrip(".")
-            return f"{sign}{s}{suffixes[index]}"
+        return f"{sign}{abs_v // div}{suffixes[index]}"
 
     def draw_header(self):
         title = self.title_font.render("M2 BLOCK", True, self.ACCENT)
         self.render_surface.blit(title, (15, 15))
 
         score = self.game_logic.get_score()
-        score_text = f"{score:,}"
+        score_text = self.format_score(score)
 
         if score >= 10000000:
             score_font = pygame.font.SysFont("Arial", 16, bold=True)
@@ -311,7 +298,7 @@ class GameUI:
             current_x = start_x + (end_x - start_x) * progress
             current_y = start_y + (end_y - start_y) * progress
 
-            scale = 1.0 - 0.6 * progress
+            scale = 1.0 - 0.2 * progress
             alpha = int(255 * (1 - progress * 0.5))
 
             scaled_size = int(CELL_SIZE * scale)
@@ -432,10 +419,10 @@ class GameUI:
         font = self.get_font_for_value(self.next_value, CELL_SIZE)
         next_text = self.render_label(font, self.next_value, self.TEXT_LIGHT)
         self.render_surface.blit(next_text, next_text.get_rect(center=next_rect.center))
-        button_width, button_height = 100, 36
+        button_width, button_height = 120, 60
         self.restart_button_rect = pygame.Rect(
-            (self.window_width - button_width) // 2,
-            self.window_height - 35,
+            (self.window_width - button_width) // 12,
+            self.window_height - 70 - button_height // 2,
             button_width, button_height
         )
 
@@ -572,6 +559,28 @@ class GameUI:
         self.render_surface.blit(hint_text, hint_text.get_rect(center=(center_x, center_y + 90)))
         pygame.display.flip()
 
+    def format_score(self, score):
+        if score == 0:
+            return "0"
+        sign = "-" if score < 0 else ""
+        n = abs(int(score))
+
+        if n < 1_000_000:
+            return f"{sign}{n:,}"
+
+        suffixes = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
+        index = int(math.floor(math.log10(n) / 3))
+
+        if index >= len(suffixes):
+            return f"{sign}{n:.2e}"
+
+        div = 1000 ** index
+        if n % div == 0:
+            return f"{sign}{n // div}{suffixes[index]}"
+        else:
+            s = f"{n / div:.1f}".rstrip("0").rstrip(".")
+            return f"{sign}{s}{suffixes[index]}"
+
     def draw_temp_message(self):
         if not self.temp_message:
             return
@@ -681,10 +690,13 @@ class GameUI:
                     self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
 
-            if show_message:
+            if show_message and not self.game_is_over:
                 self.show_temp_message("Column is full!")
 
             matrix = self.game_logic.get_matrix()
+            matrix = rearrange(matrix)
+            max_value = max(max(row) for row in matrix)
+            _, matrix = remove_redundant(matrix, max_value)
             matrix = rearrange(matrix)
             self.game_logic.set_matrix(matrix)
             self.draw_matrix()

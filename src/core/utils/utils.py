@@ -36,8 +36,12 @@ def _get_remove_values(max_value):
 
     if removed > 8:
         removed //= 2
-        if removed > 32:
+        if removed > 16:
             removed //= 2
+            if removed > 32:
+                removed //= 2
+                if removed > 64:
+                    removed //= 2
 
     return removed
 
@@ -72,12 +76,20 @@ def dynamic_random_choices(max_value):
     random_choice = set()
     if max_value > 4:
         max_value = max_value // 2 // 2 // 2
+        random_choice.add(max_value)
 
         if max_value >= 8192:
             max_value = max_value // 2
             random_choice.add(max_value)
-        else:
-            random_choice.add(max_value)
+            if max_value >= 16384:
+                max_value = max_value // 2
+                random_choice.add(max_value)
+                if max_value >= 32768:
+                    max_value = max_value // 2
+                    random_choice.add(max_value)
+                    if max_value >= 65536:
+                        max_value = max_value // 2
+                        random_choice.add(max_value)
 
     if max_value < 2:
         return [2, 4]
@@ -111,8 +123,14 @@ def random_value(matrix, score):
         return _spawn_weighted_choice(random_choices), matrix
     elif max_value >= 1024:
         random_choices = dynamic_random_choices(max_value)
-        remove_values = _get_remove_values(max_value)
-        random_choices, matrix = remove_redundant(matrix, random_choices, remove_values)
+        remove_value = _get_remove_values(max_value)
+        random_choices, matrix = remove_redundant(matrix, random_choices, remove_value)
+        remove_value = random_choices[0]
+        print("---------------")
+        print(remove_value)
+        print("---------------")
+        remove_value //= 2
+        _, matrix = remove_redundant(matrix, random_choices, remove_value)
         print(random_choices)
         return _spawn_weighted_choice(random_choices), matrix
     else:
@@ -122,9 +140,15 @@ def random_value(matrix, score):
         print(random_choices)
         return _spawn_weighted_choice(random_choices), matrix
 
-
-def remove_redundant(matrix, random_choices, remove_values):
+    
+def remove_redundant(matrix, random_choices=None, remove_values=None):
     remove_value_list = []
+    if random_choices is None:
+        random_choices = [2, 4]
+
+    if remove_values is None:
+        return [2, 4], matrix
+
     while True:
         if remove_values < 2:
             break
