@@ -36,12 +36,8 @@ def _get_remove_values(max_value):
 
     if removed > 8:
         removed //= 2
-        if removed > 16:
+        if removed > 64:
             removed //= 2
-            if removed > 32:
-                removed //= 2
-                if removed > 64:
-                    removed //= 2
 
     return removed
 
@@ -78,19 +74,6 @@ def dynamic_random_choices(max_value):
         max_value = max_value // 2 // 2 // 2
         random_choice.add(max_value)
 
-        if max_value >= 8192:
-            max_value = max_value // 2
-            random_choice.add(max_value)
-            if max_value >= 16384:
-                max_value = max_value // 2
-                random_choice.add(max_value)
-                if max_value >= 32768:
-                    max_value = max_value // 2
-                    random_choice.add(max_value)
-                    if max_value >= 65536:
-                        max_value = max_value // 2
-                        random_choice.add(max_value)
-
     if max_value < 2:
         return [2, 4]
 
@@ -98,7 +81,7 @@ def dynamic_random_choices(max_value):
     while True:
         if max_value < 2:
             break
-        if count >= 5:
+        if count >= 6:
             break
         max_value = max_value // 2
         if max_value < 2:
@@ -119,25 +102,22 @@ def random_value(matrix, score):
 
     if max_value == 0:
         random_choices = [2, 4]
-        print(random_choices)
         return _spawn_weighted_choice(random_choices), matrix
     elif max_value >= 1024:
         random_choices = dynamic_random_choices(max_value)
         remove_value = _get_remove_values(max_value)
         random_choices, matrix = remove_redundant(matrix, random_choices, remove_value)
         remove_value = random_choices[0]
-        print("---------------")
-        print(remove_value)
-        print("---------------")
         remove_value //= 2
         _, matrix = remove_redundant(matrix, random_choices, remove_value)
+        print("---------------")
         print(random_choices)
+        print("---------------")
         return _spawn_weighted_choice(random_choices), matrix
     else:
         random_choices = initial_random_choices(max_value)
         if not random_choices:
             random_choices = [2, 4]
-        print(random_choices)
         return _spawn_weighted_choice(random_choices), matrix
 
     
