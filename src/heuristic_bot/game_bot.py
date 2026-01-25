@@ -95,21 +95,6 @@ class GameBot:
 
         return best_column
 
-    # def evaluate_board(self, column, matrix, move_score, merge_count):
-    #     score = 0
-    #     score += move_score * self.W_SCORE
-
-    #     if merge_count > 1:
-    #         score += merge_count * self.W_MERGE_CHAIN
-
-    #     score += self.count_empty_cells(matrix) * self.W_EMPTY
-    #     score += self.calculate_monotonicity(matrix) * self.W_MONOTONICITY
-    #     score -= self.calculate_smoothness(matrix) * self.W_SMOOTHNESS
-    #     score += self.corner_bonus(column, matrix)
-    #     score += self.column_stack_penalty(matrix)
-
-    #     return score
-
     def column_stack_penalty(self, matrix):
         penalty = 0
         threshold = 1
@@ -118,7 +103,7 @@ class GameBot:
             empty_count = sum(1 for row in range(GRID_LENGTH) if matrix[row][column] == 0)
             if empty_count <= threshold:
                 penalty -= 100
-        # TODO: check if this column can merge values if no then its dangours
+
         return penalty
 
     def corner_bonus(self, column, matrix):
