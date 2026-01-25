@@ -1,5 +1,8 @@
 # M2 Merge Block Bot
-![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)  
+![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)
+
+*Screenshot of the M2 Merge Block Game in action*
+
 This repository contains the logic and AI bot for the **M2 Merge Block** game. The bot uses **heuristics** to decide the best moves and can be extended for **reinforcement learning** in the future.
 
 ---
@@ -47,6 +50,44 @@ The current bot is **heuristic-based**, but it can be extended with **reinforcem
 - The bot can **adapt** to different play styles.
 - Improve long-term performance beyond heuristic limitations.
 - Eventually **discover new strategies** that humans may not think of.
+
+---
+
+## 3. Setup & Run (Heuristic Bot)
+
+**Step 1:** Create and activate a virtual environment  
+```bash
+python -m venv venv
+source venv/bin/activate   # Linux / macOS
+venv\Scripts\activate      # Windows
+````
+
+**Step 2:** Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+**Step 3:** Run the heuristic bot
+
+```bash
+python run_bot.py
+```
+
+> The bot will play the game automatically using the heuristic strategy.
+
+---
+
+## 4. Setup & Run (Play Yourself)
+
+After setting up the virtual environment and installing requirements, you can play the game manually:
+
+```bash
+python main.py
+```
+
+* Use **mouse** or **number keys (0–4)** to drop the next block in the desired column.
+* Press **R** to restart the game anytime.
 
 ---
 
