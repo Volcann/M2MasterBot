@@ -1,85 +1,59 @@
-# M2 Block 🎮
-
-**M2 Block** is a modern twist on the classic 2048 puzzle game. Place tiles strategically to merge them, score points, and reach the highest tile! The game features a smooth Pygame interface, animated tile merges, drop effects, and an intelligent AI bot that can play for you.
-
----
-
-## 🎯 Features
-
-* **Classic Gameplay**: Drop tiles in columns to merge numbers. Combine same values to increase your score.
-* **AI Bot**: `GameBot` calculates optimal moves based on heuristics like merges, empty spaces, smoothness, monotonicity, and corner strategy.
-* **Dynamic UI**:
-
-  * Animated merges and tile drops
-  * Glowing tiles with smooth easing effects
-  * Responsive fullscreen scaling
-* **Score Tracking**: Keep track of your best score across sessions.
-* **Next Tile Preview**: Always see your next tile to plan your moves.
-* **Keyboard & Mouse Input**: Play using `R` to restart, `0-9` to drop in a column, or click on the grid.
+# M2 Merge Block Bot
+![M2 Merge Block Game](assets/m2_merge_block_screenshot.png)  
+This repository contains the logic and AI bot for the **M2 Merge Block** game. The bot uses **heuristics** to decide the best moves and can be extended for **reinforcement learning** in the future.
 
 ---
 
-## 🎨 Visuals
+## 1. Heuristics Used (Current Approach)
 
-* Smooth glowing tiles with color gradients based on value.
-* Pulse animation when tiles merge.
-* Real-time feedback for merges and tile drops.
-* High-quality fonts and responsive layout for any window size.
+The bot evaluates the board using a set of **weighted features** to choose the best move. These features capture the strategy and dynamics of the game:
 
----
+| Feature | Description |
+|---------|-------------|
+| **Score** | Expected gain from merging blocks in this move. |
+| **Empty** | Number of empty cells after the move (more space → more options). |
+| **Merge** | Number of successful merges in the move. |
+| **Monotonicity (Mono)** | How consistently values increase or decrease across rows/columns. |
+| **Smoothness** | Measures how “smooth” the board is (avoids scattered high-value tiles). |
+| **Corner Bonus** | Encourages keeping the highest-value tile in a corner. |
 
-## ⚙️ Installation
+**How it works:**
+1. The bot simulates a move in each column.
+2. Computes the feature values for that move.
+3. Applies predefined **weights** to each feature to calculate a **heuristic score**.
+4. Chooses the column with the **highest heuristic score**.
+5. Optionally updates weights if reinforcement learning is applied later.
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/m2-block.git
-cd m2-block
-```
-
-2. Install dependencies (requires Python ≥ 3.10):
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Run the game:
-
-```bash
-python main.py
-```
+> 🔹 This ensures deterministic, stable, and predictable AI behavior.
 
 ---
 
-## 🕹 How to Play
+## 2. Reinforcement Learning (To-Do / Future Work)
 
-* **Mouse**: Hover over a column to highlight, click to drop the tile.
-* **Keyboard**:
+The current bot is **heuristic-based**, but it can be extended with **reinforcement learning (RL)** to improve its strategy automatically:
 
-  * `0-9` → Drop tile in the corresponding column
-  * `R` → Restart the game
-* **Goal**: Merge tiles to create higher values. Strategic placement maximizes your score.
+**Ideas:**
+- **State:** The current board matrix.
+- **Action:** Place the next value in one of the columns.
+- **Reward:** 
+  - Positive: Merges, score gain, creating empty cells.
+  - Negative: Losing move, full column, bad board arrangement.
+- **Approach:**
+  - Use Q-Learning or Deep Q-Network (DQN) to learn optimal moves over time.
+  - Combine **heuristics as initial rewards** to guide the early training.
+  - Optionally, implement **self-play** for faster learning.
+
+**Goals:**
+- The bot can **adapt** to different play styles.
+- Improve long-term performance beyond heuristic limitations.
+- Eventually **discover new strategies** that humans may not think of.
 
 ---
 
-## 🤖 AI Bot
-
-The game includes a `GameBot` class that can simulate moves and suggest the best column to play. The bot evaluates:
-
-* Number of empty spaces
-* Potential merges
-* Smoothness of the board
-* Tile monotonicity
-* Corner strategy (keep the largest tile in a corner)
-
-Example usage:
-
-```python
-from game_logic.game_bot import GameBot
-
-bot = GameBot()
-best_column = bot.solve(matrix, next_tile_value)
-```
+### 📝 Notes
+- The bot is fully deterministic: same board → same move.
+- Can be integrated with a GUI (like the `GameUI` class) to test and visualize performance.
+- Designed for educational purposes and AI research in simple strategy games.
 
 ---
 
