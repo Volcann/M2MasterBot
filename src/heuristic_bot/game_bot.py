@@ -26,29 +26,32 @@ class GameBot:
 
         return total
 
-    def clamp(self, x, lo=0.0, hi=1.0):
-        return max(lo, min(hi, x))
-
-    def norm_empty(self, matrix):
-        total = GRID_WIDTH * GRID_LENGTH
-        empties = sum(1 for r in range(GRID_LENGTH) for c in range(GRID_WIDTH) if matrix[r][c] == 0)
-        return self.clamp(empties / total)
-
     def norm_score(self, score):
         if score <= 0:
             return 0.0
-        return self.clamp(math.log2(score + 1) / 12)
+        return self.soft_norm(math.log2(score + 1), scale=6.0)
+
+    def soft_norm(self, x, scale):
+        return x / (x + scale)
+
+    def norm_empty(self, matrix):
+        empties = sum(
+            1 for r in range(GRID_LENGTH)
+            for c in range(GRID_WIDTH)
+            if matrix[r][c] == 0
+        )
+        return self.soft_norm(empties, scale=GRID_WIDTH)
 
     def norm_merge(self, merges):
-        return self.clamp(merges / 4.0)
+        return self.soft_norm(merges, scale=2.0)
 
     def norm_monotonicity(self, matrix):
         raw = self.calculate_monotonicity(matrix)
-        return self.clamp((raw + 1) / 2)
+        return 0.5 + 0.5 * math.tanh(raw)
 
     def norm_smoothness(self, matrix):
         raw = self.calculate_smoothness(matrix)
-        return self.clamp(1 - raw / 6.0)
+        return 1.0 - self.soft_norm(raw, scale=2.0)
 
     def compute_features(self, column, matrix, move_score, merge_count):
         return {
