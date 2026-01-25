@@ -1,7 +1,7 @@
 import pygame
 
 from ui.game.game_ui import GameUI
-from bot.game_bot import GameBot
+from heuristic_bot.game_bot import GameBot
 
 
 class BotGameUI(GameUI):

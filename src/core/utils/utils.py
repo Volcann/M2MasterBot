@@ -4,24 +4,11 @@ from queue import Queue
 from config.constants import GRID_LENGTH, GRID_WIDTH
 
 
-def _spawn_weighted_choice(choices):
+def _spawn_choice(choices):
     if not choices:
         choices = [2, 4]
 
-    if set(choices) == {2, 4} or choices == [2, 4]:
-        return random.choices(choices, weights=[90, 10], k=1)[0]
-
-    weights = []
-    for value in choices:
-        if value == 2:
-            weight = 100
-        elif value == 4:
-            weight = 50
-        else:
-            weight = max(1, int(200 / value))
-        weights.append(weight)
-
-    return random.choices(choices, weights=weights, k=1)[0]
+    return random.choices(choices)[0]
 
 
 def _get_remove_values(max_value):
@@ -102,7 +89,7 @@ def random_value(matrix, score):
 
     if max_value == 0:
         random_choices = [2, 4]
-        return _spawn_weighted_choice(random_choices), matrix
+        return _spawn_choice(random_choices), matrix
     elif max_value >= 1024:
         random_choices = dynamic_random_choices(max_value)
         remove_value = _get_remove_values(max_value)
@@ -113,14 +100,14 @@ def random_value(matrix, score):
         print("---------------")
         print(random_choices)
         print("---------------")
-        return _spawn_weighted_choice(random_choices), matrix
+        return _spawn_choice(random_choices), matrix
     else:
         random_choices = initial_random_choices(max_value)
         if not random_choices:
             random_choices = [2, 4]
-        return _spawn_weighted_choice(random_choices), matrix
+        return _spawn_choice(random_choices), matrix
 
-    
+
 def remove_redundant(matrix, random_choices=None, remove_values=None):
     remove_value_list = []
     if random_choices is None:
@@ -202,7 +189,7 @@ def game_over(matrix, value):
                 return False
 
     for i in range(GRID_WIDTH):
-        if matrix[(GRID_WIDTH - 1)][i] == value:
+        if matrix[GRID_LENGTH - 1][i] == value:
             return False
 
     return True
@@ -238,11 +225,11 @@ def merging_values(matrix, score, row, column, value):
                                     count += 1
 
     if count == 2:
-        value *= 2 
+        value *= 2
         matrix[row][column] = value
         score += value
     elif count == 3:
-        value *= 4 
+        value *= 4
         matrix[row][column] = value
         score += value
     elif count == 4:
@@ -251,8 +238,7 @@ def merging_values(matrix, score, row, column, value):
         score += value
     else:
         return False, matrix, score, count
-
-
+    print(f"Merged {count} tiles into {value} at ({row}, {column})")
     return True, matrix, score, count
 
 

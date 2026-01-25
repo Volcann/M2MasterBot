@@ -697,7 +697,13 @@ class GameUI:
             matrix = rearrange(matrix)
             max_value = max(max(row) for row in matrix)
             _, matrix = remove_redundant(matrix, max_value)
-            matrix = rearrange(matrix)
+
+            while True:
+                merged, _ = self.game_logic.merge_column()
+                if not merged:
+                    break
+                matrix = rearrange(matrix)
+
             self.game_logic.set_matrix(matrix)
             self.draw_matrix()
             self.clock.tick(60)

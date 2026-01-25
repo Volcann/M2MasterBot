@@ -24,6 +24,13 @@ class GameLogic:
     def set_matrix(self, matrix):
         self._matrix = matrix
 
+    def step(self, column: int):
+        value = self.get_random_value()
+        success, merge_count = self.add_to_column(value, column)
+        reward = merge_count
+        done = not success
+        return reward, done
+
     def get_score(self):
         return self._score
 
