@@ -1,5 +1,5 @@
 # M2 Merge Block Bot
-![M2 Merge Block Game](assets/m2_merge_block_screenshot.png)  
+![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)  
 This repository contains the logic and AI bot for the **M2 Merge Block** game. The bot uses **heuristics** to decide the best moves and can be extended for **reinforcement learning** in the future.
 
 ---
