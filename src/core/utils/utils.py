@@ -97,9 +97,6 @@ def random_value(matrix, score):
         remove_value = random_choices[0]
         remove_value //= 2
         _, matrix = remove_redundant(matrix, random_choices, remove_value)
-        print("---------------")
-        print(random_choices)
-        print("---------------")
         return _spawn_choice(random_choices), matrix
     else:
         random_choices = initial_random_choices(max_value)
@@ -238,7 +235,6 @@ def merging_values(matrix, score, row, column, value):
         score += value
     else:
         return False, matrix, score, count
-    print(f"Merged {count} tiles into {value} at ({row}, {column})")
     return True, matrix, score, count
 
 
