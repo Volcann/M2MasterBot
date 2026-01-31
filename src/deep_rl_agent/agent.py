@@ -2,7 +2,9 @@ import json
 import os
 import numpy as np
 from typing import List
-from deep_rl_agent.feature_extractor import FeatureExtractor
+
+from config.constants import GRID_WIDTH
+from heuristic_bot.bot import HeuristicBot
 
 
 class RLAgent:
@@ -13,22 +15,22 @@ class RLAgent:
         self.theta = np.array(initial_weights, dtype=float)
         self.learning_rate = float(learning_rate)
         self.gamma = float(gamma)
-        self.extractor = FeatureExtractor()
+        self.rl_bot = HeuristicBot()
         self.episode_log = []
         self.baseline = 0.0
         self.baseline_alpha = 0.01
 
     def _feature_vector_from_dict(self, features: dict) -> np.ndarray:
-        return np.array([features[k] for k in self.feature_names], dtype=float)
+        return np.array([features[key] for key in self.feature_names], dtype=float)
 
     def _compute_action_features(self, matrix, next_value) -> List[np.ndarray]:
         feature_vecs = []
-        for col in range(self.extractor.grid_width):
-            score_gain, merges, temp_matrix = self.extractor.simulate_move(matrix, col, next_value)
+        for col in range(GRID_WIDTH):
+            score_gain, merges, temp_matrix = self.rl_bot.simulate_move(matrix, col, next_value)
             if score_gain == -1:
                 feature_vecs.append(None)
                 continue
-            features = self.extractor.compute_features(col, temp_matrix, score_gain, merges)
+            features = self.rl_bot.compute_features(col, temp_matrix, score_gain, merges)
             feature_vecs.append(self._feature_vector_from_dict(features))
         return feature_vecs
 

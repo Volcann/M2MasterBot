@@ -1,5 +1,4 @@
 import os
-import time
 from typing import List
 
 from core.game_logic import GameLogic
@@ -124,7 +123,7 @@ def run_ui_training(
     loop_count: int = 500,
     save_every: int = 50,
     output_path: str = "data/rl_agent.json",
-    fps: int = 20,
+    fps: int = 50,
 ):
     trainer = UITrainer(
         loop_count=loop_count,
@@ -137,4 +136,4 @@ def run_ui_training(
 
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
-    run_ui_training(loop_count=200, save_every=25)
+    run_ui_training(loop_count=2000, save_every=25)
