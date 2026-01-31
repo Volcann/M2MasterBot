@@ -1,7 +1,8 @@
 from core.game_logic import GameLogic
-from ui.bot.game_bot_ui import BotGameUI
+from ui.heuristic_bot.heuristic_bot_ui import HeuristicBotUI
+from ui.heuristic_bot.linear_bot_ui import LinearBotUI
 
 if __name__ == "__main__":
     game_logic = GameLogic()
-    game_ui = BotGameUI(game_logic)
+    game_ui = HeuristicBotUI(game_logic)
     game_ui.run()

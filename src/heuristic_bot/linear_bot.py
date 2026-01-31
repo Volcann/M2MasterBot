@@ -1,66 +1,37 @@
 import copy
+import time
 import math
-
 from config.constants import GRID_WIDTH, GRID_LENGTH
 from core.utils.utils import rearrange, merge_column
 
 
-class GameBot:
+class LinearBot:
     def __init__(self):
         self.weights = {
-            "score": 0.15,
-            "empty": 0.30,
-            "merge": 0.10,
-            "mono": 0.15,
-            "smooth": 0.15,
-            "corner": 0.15,
+            "score": 1.0,
+            "empty_cells": 100.0,
+            "merges": 50.0,
+            "monotonicity": 20.0,
+            "smoothness": -10.0,
+            "corner_bonus": 200.0,
         }
         self.learning_rate = 0.05
 
     def evaluate_board(self, column, matrix, move_score, merge_count):
         features = self.compute_features(column, matrix, move_score, merge_count)
-        total = 0
-
+        total_heuristic = 0.0
         for key, value in features.items():
-            total += self.weights[key] * value
-
-        return total
-
-    def norm_score(self, score):
-        if score <= 0:
-            return 0.0
-        return self.soft_norm(math.log2(score + 1), scale=6.0)
-
-    def soft_norm(self, x, scale):
-        return x / (x + scale)
-
-    def norm_empty(self, matrix):
-        empties = sum(
-            1 for r in range(GRID_LENGTH)
-            for c in range(GRID_WIDTH)
-            if matrix[r][c] == 0
-        )
-        return self.soft_norm(empties, scale=GRID_WIDTH)
-
-    def norm_merge(self, merges):
-        return self.soft_norm(merges, scale=2.0)
-
-    def norm_monotonicity(self, matrix):
-        raw = self.calculate_monotonicity(matrix)
-        return 0.5 + 0.5 * math.tanh(raw)
-
-    def norm_smoothness(self, matrix):
-        raw = self.calculate_smoothness(matrix)
-        return 1.0 - self.soft_norm(raw, scale=2.0)
+            total_heuristic += self.weights[key] * value
+        return total_heuristic
 
     def compute_features(self, column, matrix, move_score, merge_count):
         return {
-            "score": self.norm_score(move_score),
-            "empty": self.norm_empty(matrix),
-            "merge": self.norm_merge(merge_count),
-            "mono": self.norm_monotonicity(matrix),
-            "smooth": self.norm_smoothness(matrix),
-            "corner": self.corner_bonus(column, matrix),
+            "score": float(move_score),
+            "empty_cells": float(self.count_empty_cells(matrix)),
+            "merges": float(merge_count),
+            "monotonicity": float(self.calculate_monotonicity(matrix)),
+            "smoothness": float(self.calculate_smoothness(matrix)),
+            "corner_bonus": float(self.corner_bonus(column, matrix)),
         }
 
     def update_weights(self, features, reward):
@@ -74,10 +45,10 @@ class GameBot:
         for key in self.weights:
             self.weights[key] /= total
 
-    def solve(self, matrix, next_value):
+    def solve(self, matrix, next_value, debugger=None):
         best_score = -float('inf')
         best_column = 0
-
+        move_summaries = []
         for column in range(GRID_WIDTH):
             temp_matrix = copy.deepcopy(matrix)
             score_gain, distinct_merges = self.simulate_move(temp_matrix, column, next_value)
@@ -87,11 +58,23 @@ class GameBot:
 
             features = self.compute_features(column, temp_matrix, score_gain, distinct_merges)
             heuristic_score = sum(self.weights[k] * features[k] for k in self.weights)
-            self.update_weights(features, self.norm_score(score_gain))
+            self.update_weights(features, score_gain)
+            move_summaries.append({
+                "col": column,
+                "score": score_gain,
+                "h_score": heuristic_score,
+                "merges": distinct_merges
+            })
+            if debugger:
+                impact = {k: self.weights[k] * features[k] for k in self.weights}
+                debugger.update(column, impact, heuristic_score)
 
             if heuristic_score > best_score:
                 best_score = heuristic_score
                 best_column = column
+
+        if debugger:
+            debugger.draw_summary(move_summaries, best_column)
 
         return best_column
 
