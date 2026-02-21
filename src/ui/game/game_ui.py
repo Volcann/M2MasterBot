@@ -12,7 +12,7 @@ from config.constants import (
     GRID_LENGTH,
     GRID_WIDTH
 )
-from core.utils.utils import game_over, rearrange, remove_redundant
+from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values, print_matrix
 
 
 class GameUI:
@@ -674,7 +674,6 @@ class GameUI:
             if not self.game_is_over and self.input_column is not None:
                 old_matrix = [row[:] for row in matrix]
                 self.trigger_drop_animation(self.input_column, self.next_value)
-
                 merged, count = self.game_logic.add_to_column(
                     self.next_value, self.input_column
                 )
@@ -685,6 +684,7 @@ class GameUI:
                     self.drop_animations = []
                 else:
                     new_matrix = self.game_logic.get_matrix()
+                    print_matrix(new_matrix)
                     self.detect_and_trigger_animations(old_matrix, new_matrix, self.input_column)
 
                     self.next_value = self.game_logic.get_random_value()
@@ -696,7 +696,11 @@ class GameUI:
             matrix = self.game_logic.get_matrix()
             matrix = rearrange(matrix)
             max_value = max(max(row) for row in matrix)
-            _, matrix = remove_redundant(matrix, max_value)
+            remove_value = _get_remove_values(max_value)
+            _, matrix = remove_redundant(
+                matrix=matrix,
+                remove_values=remove_value
+            )
 
             while True:
                 merged, _ = self.game_logic.merge_column()

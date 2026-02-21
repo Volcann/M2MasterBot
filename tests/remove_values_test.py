@@ -5,7 +5,7 @@ def _get_remove_values(max_value):
     removed = 2
     reduction_count = 0
     while max_value > 1024:
-        max_value //= 2
+        max_value //= 4
         reduction_count += 1
         removed *= 2
 

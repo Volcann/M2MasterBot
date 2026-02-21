@@ -1,89 +1,118 @@
 import json
 import os
+import copy
 import numpy as np
-from typing import List
+from typing import List, Optional
 
 from config.constants import GRID_WIDTH
 from heuristic_bot.bot import HeuristicBot
 
 
 class RLAgent:
-    def __init__(self, initial_weights=None, learning_rate=0.01, gamma=0.99):
-        self.feature_names = ["score", "empty", "merge", "mono", "smooth", "corner"]
+    def __init__(
+        self,
+        initial_weights: Optional[List[float]] = None,
+        learning_rate: float = 0.01,
+        gamma: float = 0.99
+    ):
+        self.feature_names = [
+            "score", "empty", "merge", "mono", "smooth", "corner"
+        ]
         if initial_weights is None:
             initial_weights = [0.15, 0.3, 0.1, 0.15, 0.15, 0.15]
+
         self.theta = np.array(initial_weights, dtype=float)
         self.learning_rate = float(learning_rate)
         self.gamma = float(gamma)
         self.rl_bot = HeuristicBot()
         self.episode_log = []
-        self.baseline = 0.0
-        self.baseline_alpha = 0.01
 
     def _feature_vector_from_dict(self, features: dict) -> np.ndarray:
-        return np.array([features[key] for key in self.feature_names], dtype=float)
+        return np.array(
+            [features[key] for key in self.feature_names],
+            dtype=float
+        )
 
-    def _compute_action_features(self, matrix, next_value) -> List[np.ndarray]:
-        feature_vecs = []
+    def _get_action_space_features(
+        self,
+        matrix: List[List[int]],
+        next_value: int
+    ) -> List[Optional[np.ndarray]]:
+        feature_vectors = []
         for col in range(GRID_WIDTH):
-            score_gain, merges, temp_matrix = self.rl_bot.simulate_move(matrix, col, next_value)
+            temp_matrix = copy.deepcopy(matrix)
+            score_gain, merges = self.rl_bot.simulate_move(
+                temp_matrix, col, next_value
+            )
+
             if score_gain == -1:
-                feature_vecs.append(None)
+                feature_vectors.append(None)
                 continue
-            features = self.rl_bot.compute_features(col, temp_matrix, score_gain, merges)
-            feature_vecs.append(self._feature_vector_from_dict(features))
-        return feature_vecs
+
+            features = self.rl_bot.compute_features(
+                col, temp_matrix, score_gain, merges
+            )
+            feature_vectors.append(self._feature_vector_from_dict(features))
+        return feature_vectors
 
     def _softmax(self, logits: np.ndarray) -> np.ndarray:
-        shifted = logits - np.max(logits)
-        exps = np.exp(shifted)
-        denom = np.sum(exps)
-        if denom == 0:
-            return np.ones_like(exps) / len(exps)
-        return exps / denom
+        shifted_logits = logits - np.max(logits)
+        exp_values = np.exp(shifted_logits)
+        return exp_values / np.sum(exp_values)
 
-    def select_action(self, matrix, next_value, deterministic=False):
-        feature_vecs = self._compute_action_features(matrix, next_value)
-        logits = []
-        for vec in feature_vecs:
-            if vec is None:
-                logits.append(-1e9)
-            else:
-                logits.append(float(np.dot(self.theta, vec)))
-        logits = np.array(logits, dtype=float)
-        probs = self._softmax(logits)
-        valid = [i for i, v in enumerate(feature_vecs) if v is not None]
-        if len(valid) == 0:
-            return 0
+    def train_from_heuristic(
+        self,
+        matrix: List[List[int]],
+        next_value: int
+    ) -> int:
+        teacher_action = self.rl_bot.solve(matrix, next_value)
+        feature_vectors = self._get_action_space_features(matrix, next_value)
+
+        logits = np.array([
+            np.dot(self.theta, v) if v is not None else -1e9
+            for v in feature_vectors
+        ])
+        probabilities = self._softmax(logits)
+
+        target = np.zeros(GRID_WIDTH)
+        target[teacher_action] = 1.0
+
+        gradient = np.zeros_like(self.theta)
+        for i, vec in enumerate(feature_vectors):
+            if vec is not None:
+                gradient += (target[i] - probabilities[i]) * vec
+
+        self.theta += self.learning_rate * gradient
+        return teacher_action
+
+    def select_action(
+        self,
+        matrix: List[List[int]],
+        next_value: int,
+        deterministic: bool = True
+    ) -> int:
+        feature_vectors = self._get_action_space_features(matrix, next_value)
+        logits = np.array([
+            np.dot(self.theta, v) if v is not None else -1e9
+            for v in feature_vectors
+        ])
+
         if deterministic:
-            return int(np.argmax(probs))
-        action = int(np.random.choice(len(probs), p=probs))
-        self.episode_log.append((feature_vecs, action, probs))
-        return action
+            return int(np.argmax(logits))
 
-    def finish_episode(self, rewards: List[float]):
-        returns = []
-        G = 0.0
-        for r in reversed(rewards):
-            G = r + self.gamma * G
-            returns.insert(0, G)
-        returns = np.array(returns, dtype=float)
-        if len(returns) == 0:
-            return
-        self.baseline = (1 - self.baseline_alpha) * self.baseline + self.baseline_alpha * float(np.mean(returns))
-        for t, (feature_vecs, action, probs) in enumerate(self.episode_log):
-            vec = feature_vecs[action]
-            if vec is None:
-                continue
-            advantage = returns[t] - self.baseline
-            expected = sum(p * (fv if fv is not None else 0) for p, fv in zip(probs, feature_vecs))
-            grad_log = vec - expected
-            self.theta += self.learning_rate * advantage * grad_log
-        self.episode_log = []
+        probabilities = self._softmax(logits)
+        return int(np.random.choice(len(probabilities), p=probabilities))
+
+    def get_weights(self) -> np.ndarray:
+        return self.theta
 
     def save(self, path: str):
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        data = {"theta": self.theta.tolist(), "learning_rate": self.learning_rate, "gamma": self.gamma}
+        data = {
+            "theta": self.theta.tolist(),
+            "learning_rate": self.learning_rate,
+            "gamma": self.gamma
+        }
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(data, fh)
 
@@ -93,5 +122,7 @@ class RLAgent:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
         self.theta = np.array(data.get("theta", self.theta), dtype=float)
-        self.learning_rate = float(data.get("learning_rate", self.learning_rate))
+        self.learning_rate = float(
+            data.get("learning_rate", self.learning_rate)
+        )
         self.gamma = float(data.get("gamma", self.gamma))

@@ -11,8 +11,8 @@ class HeuristicBotUI(GameUI):
         self.bot = HeuristicBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 1500
-        self.debug = True
+        self.move_delay = 200
+        self.debug = False
 
     def handle_events(self):
         super().handle_events()

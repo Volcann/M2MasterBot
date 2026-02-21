@@ -35,7 +35,7 @@ class GameLogic:
         return self._score
 
     def get_random_value(self):
-        value, matrix = random_value(self._matrix, self._score)
+        value, matrix = random_value(self._matrix)
         self._matrix = matrix
         return value
 
