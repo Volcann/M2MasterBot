@@ -5,7 +5,7 @@ from typing import List
 
 from core.game_logic import GameLogic
 from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
-from deep_rl_agent.agent import RLAgent
+from rl_agent_with_teacher.agent import RLAgent
 from ui.game.game_ui import GameUI
 from training.debug.visualizer import RLVisualizer
 

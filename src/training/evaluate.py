@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from core.game_logic import GameLogic
 from core.utils.utils import game_over, rearrange
-from deep_rl_agent.agent import RLAgent
+from rl_agent_with_teacher.agent import RLAgent
 
 
 def evaluate(episodes=100, model_path="data/rl_agent.json"):
