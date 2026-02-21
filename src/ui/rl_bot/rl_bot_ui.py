@@ -1,6 +1,6 @@
 import pygame
 
-from core.utils.utils import game_over, rearrange, remove_redundant
+from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
 from core.game_logic import GameLogic
 from deep_rl_agent.agent import RLAgent
 from ui.game.game_ui import GameUI
@@ -15,6 +15,8 @@ class RLBotUI:
         self.game = GameLogic()
         self.ui = GameUI(self.game)
         self.last_action_time = 0
+        self.last_move_time = 0
+        self.move_delay = 0
 
     def load_agent(self):
         self.agent.load(self.model_path)
@@ -40,7 +42,12 @@ class RLBotUI:
             self.ui.input_column = action
             self.last_action_time = now
 
-        if self.ui.input_column is not None:
+        current_time = pygame.time.get_ticks()
+        if (
+            self.ui.input_column is not None
+            and current_time - self.last_move_time > self.move_delay
+        ):
+            self.last_move_time = current_time
             col = self.ui.input_column
             next_val = self.ui.next_value
 
@@ -87,7 +94,11 @@ class RLBotUI:
             matrix = self.game.get_matrix()
             matrix = rearrange(matrix)
             max_value = max(max(row) for row in matrix)
-            _, matrix = remove_redundant(matrix, max_value)
+            remove_values = _get_remove_values(max_value)
+            _, matrix = remove_redundant(
+                matrix=matrix,
+                remove_values=remove_values,
+            )
 
             while True:
                 old_matrix = [row[:] for row in matrix]

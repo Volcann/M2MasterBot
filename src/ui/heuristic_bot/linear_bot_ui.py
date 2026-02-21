@@ -4,6 +4,7 @@ from ui.game.game_ui import GameUI
 from heuristic_bot.linear_bot import LinearBot
 from heuristic_bot.debug.debug import Debugger
 
+
 class LinearBotUI(GameUI):
     def __init__(self, game_logic):
         super().__init__(game_logic)

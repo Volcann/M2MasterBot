@@ -4,7 +4,7 @@ import pygame
 from typing import List
 
 from core.game_logic import GameLogic
-from core.utils.utils import game_over, rearrange, remove_redundant
+from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
 from deep_rl_agent.agent import RLAgent
 from ui.game.game_ui import GameUI
 from training.debug.visualizer import RLVisualizer
@@ -13,7 +13,7 @@ from training.debug.visualizer import RLVisualizer
 class UITrainer:
     def __init__(
         self,
-        loop_count: int = 500,
+        loop_count: int = 50,
         save_every: int = 50,
         output_path: str = "data/rl_agent.json",
         fps: int = 60,
@@ -92,9 +92,12 @@ class UITrainer:
             current_matrix = self.game.get_matrix()
             current_matrix = rearrange(current_matrix)
             max_val = max(max(r) for r in current_matrix) if current_matrix else 0
-
+            remove_values = _get_remove_values(max_val)
             try:
-                _, current_matrix = remove_redundant(current_matrix, max_val)
+                _, current_matrix = remove_redundant(
+                    matrix=current_matrix, 
+                    remove_values=remove_values
+                )
             except Exception:
                 pass
 

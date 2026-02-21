@@ -16,15 +16,34 @@ def _get_remove_values(max_value):
         return 0
 
     removed = 2
-
     while max_value > 1024:
         max_value //= 2
         removed *= 2
 
-    if removed > 8:
-        removed //= 2
-        if removed > 64:
+    thresholds = [
+        8, 32, 64, 128, 256,
+        512, 1024, 2048, 4096,
+        8192, 16384, 32768, 65536,
+        131072, 262144, 524288,
+        1048576, 2097152, 4194304,
+        8388608, 16777216, 33554432,
+        67108864, 134217728, 268435456,
+        536870912, 1073741824, 2147483648,
+        4294967296, 8589934592, 17179869184,
+        34359738368, 68719476736, 137438953472,
+        274877906944, 549755813888, 1099511627776,
+        2199023255552, 4398046511104, 8796093022208,
+        17592186044416, 35184372088832, 70368744177664,
+        140737488355328, 281474976710656, 562949953421312,
+        1125899906842624, 2251799813685248, 4503599627370496,
+        9007199254740992, 18014398509481984, 36028797018963968,
+    ]
+
+    for t in thresholds:
+        if removed > t:
             removed //= 2
+        else:
+            break
 
     return removed
 
@@ -56,31 +75,35 @@ def initial_random_choices(max_value):
 
 
 def dynamic_random_choices(max_value):
-    random_choice = set()
-    if max_value > 4:
-        max_value = max_value // 2 // 2 // 2
-        random_choice.add(max_value)
-
     if max_value < 2:
         return [2, 4]
 
+    random_choice = set()
+    removed_value = _get_remove_values(max_value)
+
     count = 0
     while True:
-        if max_value < 2:
+        if count == 6:
             break
-        if count >= 6:
+        removed_value *= 2
+        max_value = removed_value
+        count += 1
+
+    random_choice.add(max_value)
+
+    while True:
+        if max_value < 2:
             break
         max_value = max_value // 2
         if max_value < 2:
             break
         random_choice.add(max_value)
-        count += 1
 
     random_choices = sorted(list(random_choice))
     return random_choices
 
 
-def random_value(matrix, score):
+def random_value(matrix):
     max_value = 0
     for i in range(GRID_LENGTH):
         for j in range(GRID_WIDTH):
@@ -93,10 +116,12 @@ def random_value(matrix, score):
     elif max_value >= 1024:
         random_choices = dynamic_random_choices(max_value)
         remove_value = _get_remove_values(max_value)
-        random_choices, matrix = remove_redundant(matrix, random_choices, remove_value)
-        remove_value = random_choices[0]
-        remove_value //= 2
-        _, matrix = remove_redundant(matrix, random_choices, remove_value)
+
+        random_choices, matrix = remove_redundant(
+            matrix=matrix,
+            random_choices=random_choices,
+            remove_values=remove_value
+        )
         return _spawn_choice(random_choices), matrix
     else:
         random_choices = initial_random_choices(max_value)
