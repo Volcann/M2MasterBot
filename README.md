@@ -118,3 +118,6 @@ python main.py
 This project is open-source under the **MIT License**.
 
 ---
+
+
+PYTHONPATH=src python3 -m training.train_agent
