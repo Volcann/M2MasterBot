@@ -7,7 +7,7 @@ from core.game_logic import GameLogic
 from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
 from rl_agent_with_teacher.agent import RLAgent
 from ui.game.game_ui import GameUI
-from training.debug.visualizer import RLVisualizer
+from training.debug.teacher_enhanced_visualizer import TeacherEnhancedVisualizer
 
 
 class UITrainer:
@@ -28,8 +28,10 @@ class UITrainer:
         self.game = GameLogic()
         self.ui = GameUI(self.game)
 
-        self.visualizer = RLVisualizer(self.agent.feature_names)
+        # UPDATED: Use Enhanced Visualizer
+        self.visualizer = TeacherEnhancedVisualizer(self.agent.feature_names)
         self.history = []
+        self.alignment_score = 0.0
 
         current_w, current_h = self.ui.screen.get_size()
         self.ui.screen = pygame.display.set_mode(
@@ -54,13 +56,17 @@ class UITrainer:
             self.ui.handle_events()
 
             if not self.ui.game_is_over and self.ui.input_column is None:
-                action = self.agent.train_from_heuristic(
+                # CALCULATE ALIGNMENT: Compare agent's best guess vs teacher's action
+                agent_action = self.agent.select_action(matrix, self.ui.next_value)
+                teacher_action = self.agent.train_from_heuristic(
                     matrix, 
                     self.ui.next_value
                 )
+                
+                self.alignment_score = 1.0 if agent_action == teacher_action else 0.0
 
-                self.ui.input_column = action
-                self.ui.trigger_drop_animation(action, self.ui.next_value)
+                self.ui.input_column = teacher_action
+                self.ui.trigger_drop_animation(teacher_action, self.ui.next_value)
 
             show_message = False
 
@@ -109,10 +115,13 @@ class UITrainer:
 
             self.game.set_matrix(current_matrix)
             self.ui.draw_matrix()
+            
+            # UPDATED: Draw with alignment score
             self.visualizer.draw(
                 self.ui.screen, 
                 self.agent.get_weights(), 
                 self.history, 
+                self.alignment_score,
                 self.game_width
             )
 

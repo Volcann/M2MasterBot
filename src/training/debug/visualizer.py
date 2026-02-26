@@ -14,7 +14,7 @@ class RLVisualizer:
         pygame.draw.rect(screen, (25, 25, 30), rect)
 
         y = 40
-        title = self.header_font.render("AGENT WEIGHTS", True, (255, 255, 255))
+        title = self.header_font.render("AGENT WITH TEACHER", True, (255, 255, 255))
         screen.blit(title, (x_offset + 20, y))
         y += 40
 
