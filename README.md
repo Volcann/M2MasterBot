@@ -108,3 +108,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🎉 Credits
 Created by **volcani** | Inspired by the addictive mechanics of **2048**.
+
+
