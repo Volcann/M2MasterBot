@@ -72,8 +72,9 @@ Supported RL paradigms include:
 ### Play the Game
 Test your skills against the AI or play manually:
 ```bash
-python run_bot.py      # Run the Heuristic Bot
-python main.py         # Play Manually (Controls: Mouse or 0-4)
+python3 src/run_bot.py      # Run the Heuristic Bot
+python3 src/rl_run_bot.py   # Run the RL Bot
+python3 src/play.py         # Play Manually (Controls: Mouse or 0-4)
 ```
 
 ### RL Training & Research
@@ -81,23 +82,22 @@ Observe the agent's learning process in real-time:
 
 #### Guided Training (Stable)
 ```bash
-PYTHONPATH=src python3 -m training.train_agent
+PYTHONPATH=src python3 -m training.rl.train_with_teacher
 ```
 
 #### No-Teacher Training (Visualize Failure Cycle)
 ```bash
-PYTHONPATH=src python3 -m training.train_no_teacher --episodes 200 --lr 0.1
+PYTHONPATH=src python3 -m training.rl.train_standard --episodes 200 --lr 0.1
 ```
 
 ---
 
 ## 📂 Project Structure
 - `src/core`: Game logic and engine.
-- `src/heuristic_bot`: Heuristic decision logic.
-- `src/rl_agent_with_teacher`: Guided RL implementation.
-- `src/rl_no_teacher`: Sparse reward RL for research.
+- `src/agents/heuristic`: Heuristic decision logic.
+- `src/agents/rl`: RL agent implementations (standard and teacher-guided).
 - `src/ui`: Pygame-based GUI and real-time visualizers.
-- `src/training`: Training scripts and performance evaluation.
+- `src/training/rl`: RL training scripts.
 
 ---
 

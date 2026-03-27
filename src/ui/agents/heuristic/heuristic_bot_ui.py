@@ -1,8 +1,8 @@
 import pygame
 
 from ui.game.game_ui import GameUI
-from heuristic_bot.bot import HeuristicBot
-from heuristic_bot.debug.debug import Debugger
+from agents.heuristic.simple import HeuristicBot
+from agents.heuristic.debug.debug import Debugger
 
 
 class HeuristicBotUI(GameUI):
@@ -11,8 +11,8 @@ class HeuristicBotUI(GameUI):
         self.bot = HeuristicBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 200
-        self.debug = False
+        self.move_delay = 1200
+        self.debug = True
 
     def handle_events(self):
         super().handle_events()

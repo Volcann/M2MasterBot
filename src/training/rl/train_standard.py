@@ -6,7 +6,7 @@ from typing import List
 
 from core.game_logic import GameLogic
 from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
-from rl_no_teacher.agent import NoTeacherAgent
+from agents.rl.standard import NoTeacherAgent
 from ui.game.game_ui import GameUI
 from training.debug.no_teacher_visualizer import NoTeacherVisualizer
 

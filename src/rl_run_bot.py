@@ -1,7 +1,7 @@
 
 import os
 
-from ui.rl_bot.rl_bot_ui import RLBotUI
+from ui.agents.rl.rl_bot_ui import RLBotUI
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from core.game_logic import GameLogic
 from core.utils.utils import game_over, rearrange
-from rl_no_teacher.agent import NoTeacherAgent
+from agents.rl.standard import NoTeacherAgent
 
 
 def evaluate_no_teacher(episodes=100, model_path="data/rl_no_teacher_agent.json"):

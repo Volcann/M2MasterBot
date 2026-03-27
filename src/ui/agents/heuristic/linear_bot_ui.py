@@ -1,8 +1,8 @@
 import pygame
 
 from ui.game.game_ui import GameUI
-from heuristic_bot.linear_bot import LinearBot
-from heuristic_bot.debug.debug import Debugger
+from agents.heuristic.linear import LinearBot
+from agents.heuristic.debug.debug import Debugger
 
 
 class LinearBotUI(GameUI):
