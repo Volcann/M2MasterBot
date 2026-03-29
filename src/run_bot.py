@@ -1,6 +1,6 @@
 from core.game_logic import GameLogic
-from ui.heuristic_bot.heuristic_bot_ui import HeuristicBotUI
-from ui.heuristic_bot.linear_bot_ui import LinearBotUI
+from ui.agents.heuristic.heuristic_bot_ui import HeuristicBotUI
+from ui.agents.heuristic.linear_bot_ui import LinearBotUI
 
 if __name__ == "__main__":
     game_logic = GameLogic()

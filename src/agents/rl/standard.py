@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Optional
 
 from config.constants import GRID_WIDTH
-from heuristic_bot.bot import HeuristicBot
+from agents.heuristic.simple import HeuristicBot
 
 
 class NoTeacherAgent:

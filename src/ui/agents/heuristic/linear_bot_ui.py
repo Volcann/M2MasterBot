@@ -1,14 +1,14 @@
 import pygame
 
 from ui.game.game_ui import GameUI
-from heuristic_bot.bot import HeuristicBot
-from heuristic_bot.debug.debug import Debugger
+from agents.heuristic.linear import LinearBot
+from agents.heuristic.debug.debug import Debugger
 
 
-class HeuristicBotUI(GameUI):
+class LinearBotUI(GameUI):
     def __init__(self, game_logic):
         super().__init__(game_logic)
-        self.bot = HeuristicBot()
+        self.bot = LinearBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
         self.move_delay = 200
