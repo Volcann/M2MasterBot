@@ -684,7 +684,6 @@ class GameUI:
                     self.drop_animations = []
                 else:
                     new_matrix = self.game_logic.get_matrix()
-                    print_matrix(new_matrix)
                     self.detect_and_trigger_animations(old_matrix, new_matrix, self.input_column)
 
                     self.next_value = self.game_logic.get_random_value()
