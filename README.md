@@ -157,6 +157,8 @@ PYTHONPATH=src python3 src/run_manual.py
 
 # Heuristic bots
 PYTHONPATH=src python3 src/run_heuristic_bot.py     # BasicBot (recommended)
+PYTHONPATH=src python3 src/run_fixed_linear_bot.py   # FixedLinearBot (static weights)
+PYTHONPATH=src python3 src/run_adaptive_linear_bot.py # AdaptiveLinearBot (uniform start)
 PYTHONPATH=src python3 src/run_linear_bot.py        # LinearBot (pre-tuned + adaptive)
 
 # RL bots

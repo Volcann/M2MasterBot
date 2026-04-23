@@ -10,8 +10,8 @@ class FixedLinearBotUI(GameUI):
         self.bot = FixedLinearBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 100  # Faster by default for bots
-        self.debug = False
+        self.move_delay = 2000  # Faster by default for bots
+        self.debug = True
 
     def handle_events(self):
         super().handle_events()

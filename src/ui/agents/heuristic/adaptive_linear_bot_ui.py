@@ -10,8 +10,8 @@ class AdaptiveLinearBotUI(GameUI):
         self.bot = AdaptiveLinearBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 100
-        self.debug = False
+        self.move_delay = 2000
+        self.debug = True
 
     def handle_events(self):
         super().handle_events()
