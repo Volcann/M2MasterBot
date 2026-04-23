@@ -1,5 +1,5 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
-from core.utils.utils import (
+from core.utils.core_utils import (
     rearrange,
     merge_column,
     random_value

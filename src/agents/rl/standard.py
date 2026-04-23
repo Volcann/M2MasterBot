@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Optional
 
 from config.constants import GRID_WIDTH
-from agents.heuristic.simple import HeuristicBot
+from agents.heuristic.basic_bot import BasicBot
 
 
 class NoTeacherAgent:
@@ -25,7 +25,7 @@ class NoTeacherAgent:
         self.theta = np.array(initial_weights, dtype=float)
         self.learning_rate = float(learning_rate)
         self.gamma = float(gamma)
-        self.rl_bot = HeuristicBot()
+        self.rl_bot = BasicBot()
         
     def _feature_vector_from_dict(self, features: dict) -> np.ndarray:
         return np.array(

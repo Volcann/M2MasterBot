@@ -1,19 +1,18 @@
 import copy
-import time
 import math
 from config.constants import GRID_WIDTH, GRID_LENGTH
 from core.utils.core_utils import rearrange, merge_column
 
 
-class LinearBot:
+class AdaptiveLinearBot:
     def __init__(self):
         self.weights = {
-            "score": 1.0,
-            "empty_cells": 100.0,
-            "merges": 50.0,
-            "monotonicity": 20.0,
-            "smoothness": -10.0,
-            "corner_bonus": 200.0,
+            "score": 1.0 / 6.0,
+            "empty_cells": 1.0 / 6.0,
+            "merges": 1.0 / 6.0,
+            "monotonicity": 1.0 / 6.0,
+            "smoothness": 1.0 / 6.0,
+            "corner_bonus": 1.0 / 6.0,
         }
         self.learning_rate = 0.05
 
@@ -42,8 +41,9 @@ class LinearBot:
             self.weights[key] += self.learning_rate * reward * features[key]
 
         total = sum(self.weights.values())
-        for key in self.weights:
-            self.weights[key] /= total
+        if total != 0:
+            for key in self.weights:
+                self.weights[key] /= total
 
     def solve(self, matrix, next_value, debugger=None):
         best_score = -float('inf')
@@ -58,7 +58,9 @@ class LinearBot:
 
             features = self.compute_features(column, temp_matrix, score_gain, distinct_merges)
             heuristic_score = sum(self.weights[k] * features[k] for k in self.weights)
+
             self.update_weights(features, score_gain)
+
             move_summaries.append({
                 "col": column,
                 "score": score_gain,

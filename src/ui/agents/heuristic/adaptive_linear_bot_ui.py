@@ -1,17 +1,16 @@
 import pygame
-
 from ui.game.game_ui import GameUI
-from agents.heuristic.simple import HeuristicBot
+from agents.heuristic.adaptive_linear import AdaptiveLinearBot
 from agents.heuristic.debug.debug import Debugger
 
 
-class HeuristicBotUI(GameUI):
+class AdaptiveLinearBotUI(GameUI):
     def __init__(self, game_logic):
         super().__init__(game_logic)
-        self.bot = HeuristicBot()
+        self.bot = AdaptiveLinearBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 200
+        self.move_delay = 100
         self.debug = False
 
     def handle_events(self):
@@ -21,7 +20,7 @@ class HeuristicBotUI(GameUI):
             current_time = pygame.time.get_ticks()
             if current_time - self.last_move_time > self.move_delay:
                 matrix = self.game_logic.get_matrix()
-                self.visualizer = self.visualizer if self.debug else None
-                best_col = self.bot.solve(matrix, self.next_value, self.visualizer)
+                visualizer = self.visualizer if self.debug else None
+                best_col = self.bot.solve(matrix, self.next_value, visualizer)
                 self.input_column = best_col
                 self.last_move_time = current_time

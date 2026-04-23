@@ -12,7 +12,7 @@ from config.constants import (
     GRID_LENGTH,
     GRID_WIDTH
 )
-from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values, print_matrix
+from core.utils.core_utils import game_over, rearrange, remove_redundant, _get_remove_values, print_matrix
 
 
 class GameUI:
