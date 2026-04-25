@@ -18,7 +18,6 @@ class NoTeacherAgent:
         self.feature_names = [
             "score", "empty", "merge", "mono", "smooth", "corner"
         ]
-        # High volatility initialization for visual effect
         if initial_weights is None:
             initial_weights = np.random.uniform(-0.1, 0.1, len(self.feature_names)).tolist()
 
@@ -26,7 +25,7 @@ class NoTeacherAgent:
         self.learning_rate = float(learning_rate)
         self.gamma = float(gamma)
         self.rl_bot = BasicBot()
-        
+
     def _feature_vector_from_dict(self, features: dict) -> np.ndarray:
         return np.array(
             [features[key] for key in self.feature_names],
@@ -67,12 +66,11 @@ class NoTeacherAgent:
             for v in feature_vectors
         ])
 
-        # Epsilon-greedy exploration
         if np.random.random() < epsilon:
             valid_actions = [i for i, v in enumerate(feature_vectors) if v is not None]
             if not valid_actions: return 0
             return np.random.choice(valid_actions)
-        
+
         return int(np.argmax(logits))
 
     def update_q_learning(
@@ -90,7 +88,7 @@ class NoTeacherAgent:
         Grad = Error * Features
         """
         current_q = np.dot(self.theta, state_features)
-        
+
         if done or next_state_matrix is None or next_value is None:
             target = reward
         else:
@@ -104,7 +102,7 @@ class NoTeacherAgent:
         error = target - current_q
         delta_w = self.learning_rate * error * state_features
         self.theta += delta_w
-        
+
         return np.mean(np.abs(delta_w))
 
     def get_weights(self) -> np.ndarray:
