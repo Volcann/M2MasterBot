@@ -1,9 +1,5 @@
 from config.constants import GRID_LENGTH, GRID_WIDTH
-from core.utils.core_utils import (
-    rearrange,
-    merge_column,
-    random_value
-)
+from core.utils.core_utils import rearrange, merge_column, random_value
 
 
 class GameLogic:
@@ -29,7 +25,7 @@ class GameLogic:
         success, merge_count = self.add_to_column(value, column)
         reward = merge_count
         done = not success
-        return reward, done
+        return (reward, done)
 
     def get_score(self):
         return self._score
@@ -58,11 +54,10 @@ class GameLogic:
                         count_merge.append(count)
                         self._matrix = rearrange(self._matrix, column)
                     merge_count = max(count_merge) if count_merge else count
-                    return True, merge_count
+                    return (True, merge_count)
                 else:
                     pass
-                    return False, 0
-
+                    return (False, 0)
             if self._matrix[index][column] == 0:
                 self._matrix[index][column] = value
                 while True:
@@ -74,7 +69,6 @@ class GameLogic:
                 break
             else:
                 index += 1
-
         for i in range(GRID_WIDTH):
             while True:
                 merged, count = self.merge_column(i)
@@ -82,12 +76,12 @@ class GameLogic:
                     break
                 count_merge.append(count)
                 self._matrix = rearrange(self._matrix)
-
         count_merge.sort()
         merge_count = count_merge[-1] if count_merge else 0
-
-        return True, merge_count
+        return (True, merge_count)
 
     def merge_column(self, column=-1):
-        merged, self._matrix, self._score, count = merge_column(self._matrix, self._score, column)
-        return merged, count
+        merged, self._matrix, self._score, count = merge_column(
+            self._matrix, self._score, column
+        )
+        return (merged, count)

@@ -15,7 +15,6 @@ class AdaptiveLinearBotUI(GameUI):
 
     def handle_events(self):
         super().handle_events()
-
         if not self.game_is_over and self.input_column is None:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_move_time > self.move_delay:
