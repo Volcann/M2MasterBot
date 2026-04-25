@@ -1,12 +1,10 @@
 from __future__ import annotations
-
 import argparse
 import ast
 import json
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -59,7 +57,9 @@ def load_clean(path: str) -> pd.DataFrame:
     if bad:
         df = df.drop(index=bad).reset_index(drop=True)
     df["score"] = pd.to_numeric(df["score"], errors="coerce").astype("Int64")
-    df["highest_tile"] = pd.to_numeric(df["highest_tile"], errors="coerce").astype("Int64")
+    df["highest_tile"] = pd.to_numeric(df["highest_tile"], errors="coerce").astype(
+        "Int64"
+    )
     df = df.dropna(subset=["timestamp", "score"]).reset_index(drop=True)
     return df
 
@@ -81,8 +81,13 @@ def plot_score_time_simple(df: pd.DataFrame, outpath: str) -> None:
     if len(scores):
         last_ts = timestamps.iloc[-1]
         last_score = int(scores.iloc[-1])
-        plt.annotate(f"Last: {last_score}", xy=(last_ts, last_score), xytext=(0, 10),
-                     textcoords="offset points", ha="center")
+        plt.annotate(
+            f"Last: {last_score}",
+            xy=(last_ts, last_score),
+            xytext=(0, 10),
+            textcoords="offset points",
+            ha="center",
+        )
     plt.title("Game score over time")
     plt.xlabel("Time")
     plt.ylabel("Score")
@@ -161,21 +166,23 @@ def potential_m2_merges(arr: np.ndarray) -> Tuple[int, int]:
                 continue
             neighbors = 0
             for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < rows and 0 <= nc < cols and int(arr[nr, nc]) == val:
+                nr, nc = (r + dr, c + dc)
+                if 0 <= nr < rows and 0 <= nc < cols and (int(arr[nr, nc]) == val):
                     neighbors += 1
             if neighbors >= 2:
                 centers.add((r, c))
             if neighbors > max_neighbors:
                 max_neighbors = neighbors
-    return len(centers), int(max_neighbors)
+    return (len(centers), int(max_neighbors))
 
 
 def analyze(cfg: Config) -> Dict[str, Any]:
     ensure_dir(cfg.outdir)
     df = load_clean(cfg.input_path)
     plot_score_time_simple(df, os.path.join(cfg.outdir, "score_over_time.png"))
-    plot_score_distribution_simple(df, os.path.join(cfg.outdir, "score_distribution.png"))
+    plot_score_distribution_simple(
+        df, os.path.join(cfg.outdir, "score_distribution.png")
+    )
     plot_tile_bar_simple(df, os.path.join(cfg.outdir, "highest_tile_simple.png"))
     outputs = {
         "score_over_time": os.path.join(cfg.outdir, "score_over_time.png"),
@@ -191,17 +198,21 @@ def analyze(cfg: Config) -> Dict[str, Any]:
             smooth = smoothness_of_array(arr)
             potential_merges, max_neighbors = potential_m2_merges(arr)
             highest_calc = int(arr.max()) if arr.size else 0
-            rows.append({
-                "timestamp": row["timestamp"],
-                "score": int(row["score"]),
-                "highest_tile_csv": int(row["highest_tile"]) if not pd.isna(row["highest_tile"]) else None,
-                "highest_tile_calc": highest_calc,
-                "empty_cells": empty,
-                "smoothness": smooth,
-                "potential_m2_merges": potential_merges,
-                "max_neighbors_for_merge": max_neighbors,
-                "matrix_shape": str(arr.shape),
-            })
+            rows.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "score": int(row["score"]),
+                    "highest_tile_csv": int(row["highest_tile"])
+                    if not pd.isna(row["highest_tile"])
+                    else None,
+                    "highest_tile_calc": highest_calc,
+                    "empty_cells": empty,
+                    "smoothness": smooth,
+                    "potential_m2_merges": potential_merges,
+                    "max_neighbors_for_merge": max_neighbors,
+                    "matrix_shape": str(arr.shape),
+                }
+            )
         out_csv = os.path.join(cfg.outdir, "derived_metrics_per_game.csv")
         pd.DataFrame(rows).to_csv(out_csv, index=False)
         outputs["derived_metrics_csv"] = out_csv
@@ -215,8 +226,12 @@ def parse_args() -> Config:
     p.add_argument("--top", "-t", type=int, default=10)
     p.add_argument("--export-metrics", action="store_true")
     args = p.parse_args()
-    return Config(input_path=args.input, outdir=args.outdir, top_n=args.top,
-                  export_metrics=args.export_metrics)
+    return Config(
+        input_path=args.input,
+        outdir=args.outdir,
+        top_n=args.top,
+        export_metrics=args.export_metrics,
+    )
 
 
 if __name__ == "__main__":

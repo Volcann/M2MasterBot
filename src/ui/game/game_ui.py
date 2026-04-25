@@ -6,13 +6,7 @@ import math
 import colorsys
 import random
 from datetime import datetime
-
-from config.constants import (
-    CELL_SIZE, MARGIN,
-    SCORE_FONT_SIZE,
-    GRID_LENGTH,
-    GRID_WIDTH
-)
+from config.constants import CELL_SIZE, MARGIN, SCORE_FONT_SIZE, GRID_LENGTH, GRID_WIDTH
 from core.utils.core_utils import (
     game_over,
     rearrange,
@@ -22,7 +16,6 @@ from core.utils.core_utils import (
 
 
 class Particle:
-    """Sharp shards for a 'break' effect."""
     def __init__(self, x, y, color):
         self.x = x
         self.y = y
@@ -34,7 +27,6 @@ class Particle:
         self.life = 1.0
         self.max_life = 1.0
         self.size = random.randint(3, 8)
-        # Random polygon points for a shard look
         self.points = [
             (random.uniform(-1, 1) * self.size, random.uniform(-1, 1) * self.size)
             for _ in range(3)
@@ -45,7 +37,7 @@ class Particle:
     def update(self, dt):
         self.x += self.vx
         self.y += self.vy
-        self.vy += 0.3 # Gravity
+        self.vy += 0.3
         self.vx *= 0.97
         self.rotation += self.rot_speed
         self.life -= dt * 1.2
@@ -53,26 +45,21 @@ class Particle:
 
     def draw(self, surface):
         alpha = max(0, min(255, int(255 * (self.life / self.max_life))))
-        if alpha < 5: return
-        
-        # Create a surface for the shard
+        if alpha < 5:
+            return
         s = pygame.Surface((self.size * 3, self.size * 3), pygame.SRCALPHA)
-        # Rotate points
         rad = math.radians(self.rotation)
         rotated_points = []
-        cx, cy = self.size * 1.5, self.size * 1.5
+        cx, cy = (self.size * 1.5, self.size * 1.5)
         for px, py in self.points:
             rx = px * math.cos(rad) - py * math.sin(rad)
             ry = px * math.sin(rad) + py * math.cos(rad)
             rotated_points.append((cx + rx, cy + ry))
-            
         pygame.draw.polygon(s, (*self.color, alpha), rotated_points)
         surface.blit(s, (int(self.x - cx), int(self.y - cy)))
 
 
-
 class ScorePopup:
-    """Floating '+N' text that rises and fades."""
     def __init__(self, x, y, value):
         self.x = x
         self.y = float(y)
@@ -97,7 +84,6 @@ class ScorePopup:
 
 
 class Star:
-    """Slow ambient drifting background particle."""
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -121,7 +107,6 @@ class Star:
         surface.blit(s, (int(self.x), int(self.y)))
 
 
-
 class GameUI:
     BASE_COLORS = {
         0: (25, 25, 25),
@@ -137,7 +122,6 @@ class GameUI:
         1024: (63, 81, 181),
         2048: (255, 215, 0),
     }
-
     BG_DARK = (12, 12, 15)
     GRID_BG = (28, 28, 35)
     TEXT_LIGHT = (245, 245, 245)
@@ -149,21 +133,14 @@ class GameUI:
 
     def __init__(self, game_logic):
         self.game_logic = game_logic
-
         self.top_padding = 90
         self.bottom_padding = 110
-
         self.window_width = GRID_WIDTH * (CELL_SIZE + MARGIN) + MARGIN
         self.window_height = (
-            GRID_LENGTH * (CELL_SIZE + MARGIN)
-            + self.top_padding
-            + self.bottom_padding
+            GRID_LENGTH * (CELL_SIZE + MARGIN) + self.top_padding + self.bottom_padding
         )
-
         pygame.init()
         pygame.mixer.init()
-        
-        # Load merge sound
         self.merge_sound = None
         sound_path = "/home/folium/Documents/M2MasterBot/assets/merge_sound.wav"
         if os.path.exists(sound_path):
@@ -171,18 +148,14 @@ class GameUI:
                 self.merge_sound = pygame.mixer.Sound(sound_path)
             except Exception as e:
                 print(f"Failed to load sound: {e}")
-
         self.is_fullscreen = False
         self.base_width = self.window_width
         self.base_height = self.window_height
         self.scale_factor = 1.0
         self.screen_offset = (0, 0)
-
         self.render_surface = pygame.Surface((self.base_width, self.base_height))
-
         self.screen = pygame.display.set_mode(
-            (self.window_width, self.window_height),
-            pygame.RESIZABLE
+            (self.window_width, self.window_height), pygame.RESIZABLE
         )
         pygame.display.set_caption("M2 Block")
         self.fonts = {
@@ -194,12 +167,10 @@ class GameUI:
         self.button_font = pygame.font.SysFont("Arial", 20, bold=True)
         self.game_over_font = pygame.font.SysFont("Arial", 48, bold=True)
         self.sub_font = pygame.font.SysFont("Arial", 20)
-
         self.clock = pygame.time.Clock()
         self.input_column = None
         self.next_value = self.game_logic.get_random_value()
         self.game_is_over = False
-
         self.hover_column = -1
         self.mouse_pos = (0, 0)
         self.high_score = 0
@@ -208,19 +179,15 @@ class GameUI:
         self.drop_animations = []
         self.particles = []
         self.score_popups = []
-        self.spawn_animations = []  # (col, row, start_time)
-        self.col_flash = None       # (col, start_time) — white column shine
-        self.bg_stars = [
-            Star(self.base_width, self.base_height) for _ in range(55)
-        ]
+        self.spawn_animations = []
+        self.col_flash = None
+        self.bg_stars = [Star(self.base_width, self.base_height) for _ in range(55)]
         self.shake_intensity = 0
         self.prev_matrix = None
         self.popup_font = pygame.font.SysFont("Arial", 18, bold=True)
-
         self.temp_message = None
         self.temp_message_time = 0
         self.temp_message_duration = 1500
-
         self.restart_button_rect = None
         self.fullscreen_button_rect = None
         self.game_over_time = None
@@ -231,11 +198,9 @@ class GameUI:
         if value in self.BASE_COLORS:
             return self.BASE_COLORS[value]
         power = int(math.log2(value)) if value > 0 else 0
-
-        hue = ((power - 12) * 0.08) % 1.0
+        hue = (power - 12) * 0.08 % 1.0
         saturation = 0.75 + 0.15 * math.sin(power * 0.5)
         value_hsv = 0.85 + 0.1 * math.cos(power * 0.3)
-
         r, g, b = colorsys.hsv_to_rgb(hue, saturation, value_hsv)
         return (int(r * 255), int(g * 255), int(b * 255))
 
@@ -243,14 +208,12 @@ class GameUI:
         text = self.format_value_label(value)
         padding = 10
         available_width = max(0, max_width - padding * 2)
-
         for size in range(44, 10, -2):
             if size in self.fonts:
                 font = self.fonts[size]
                 text_width = font.size(text)[0]
                 if text_width <= available_width:
                     return font
-
         return self.fonts[min(self.fonts.keys())]
 
     def show_temp_message(self, text):
@@ -261,9 +224,11 @@ class GameUI:
         pygame.draw.rect(surface, color, rect, border_radius=radius)
 
     def draw_glow_rect(self, surface, color, rect, radius=12, glow_size=3):
-        glow_color = tuple(min(255, c + 40) for c in color)
+        glow_color = tuple((min(255, c + 40) for c in color))
         glow_rect = rect.inflate(glow_size, glow_size)
-        pygame.draw.rect(surface, glow_color, glow_rect, border_radius=radius + 2, width=2)
+        pygame.draw.rect(
+            surface, glow_color, glow_rect, border_radius=radius + 2, width=2
+        )
         pygame.draw.rect(surface, color, rect, border_radius=radius)
 
     def render_label(self, font, value, color, alpha=255):
@@ -279,56 +244,56 @@ class GameUI:
     def format_value_label(self, value):
         if value is None:
             return ""
-
         try:
             v = int(value)
         except Exception:
             return str(value)
-
         abs_v = abs(v)
         sign = "-" if v < 0 else ""
         suffixes = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
-
-        if abs_v < 1_0000:
+        if abs_v < 10000:
             return f"{v}"
-
         index = int(math.floor(math.log10(abs_v) / 3))
         if index >= len(suffixes):
             return f"{v:.2e}"
-
-        div = 1000 ** index
+        div = 1000**index
         return f"{sign}{abs_v // div}{suffixes[index]}"
 
-    def _draw_pill(self, label_text, value_text, cx, y,
-                   value_color, bg_color=(35, 35, 48),
-                   border_color=(60, 60, 85), glow_color=None):
-        """Draw a neat pill card centred at cx, top at y."""
+    def _draw_pill(
+        self,
+        label_text,
+        value_text,
+        cx,
+        y,
+        value_color,
+        bg_color=(35, 35, 48),
+        border_color=(60, 60, 85),
+        glow_color=None,
+    ):
         lbl_font = pygame.font.SysFont("Arial", 12, bold=True)
         val_font = pygame.font.SysFont("Arial", 22, bold=True)
         lbl_surf = lbl_font.render(label_text, True, self.TEXT_DIM)
         val_surf = val_font.render(value_text, True, value_color)
-
-        pad_x, pad_y = 14, 6
+        pad_x, pad_y = (14, 6)
         pill_w = max(lbl_surf.get_width(), val_surf.get_width()) + pad_x * 2
         pill_h = lbl_surf.get_height() + val_surf.get_height() + pad_y * 2 + 2
         pill_x = cx - pill_w // 2
-
         if glow_color:
             for i in range(4, 0, -1):
                 gr = pygame.Rect(pill_x - i, y - i, pill_w + i * 2, pill_h + i * 2)
                 gs = pygame.Surface((gr.width, gr.height), pygame.SRCALPHA)
                 pygame.draw.rect(
-                    gs, (*glow_color, 18 + i * 10),
-                    (0, 0, gr.width, gr.height), border_radius=14
+                    gs,
+                    (*glow_color, 18 + i * 10),
+                    (0, 0, gr.width, gr.height),
+                    border_radius=14,
                 )
                 self.render_surface.blit(gs, gr.topleft)
-
         pill_rect = pygame.Rect(pill_x, y, pill_w, pill_h)
         pygame.draw.rect(self.render_surface, bg_color, pill_rect, border_radius=12)
         pygame.draw.rect(
             self.render_surface, border_color, pill_rect, width=1, border_radius=12
         )
-
         lx = pill_x + (pill_w - lbl_surf.get_width()) // 2
         vx = pill_x + (pill_w - val_surf.get_width()) // 2
         self.render_surface.blit(lbl_surf, (lx, y + pad_y))
@@ -337,24 +302,22 @@ class GameUI:
     def draw_header(self):
         title = self.title_font.render("M2 BLOCK", True, self.ACCENT)
         self.render_surface.blit(title, (15, 18))
-
         score = self.game_logic.get_score()
         if score > self.high_score:
             self.high_score = score
-
         score_text = self.format_score(score)
         high_text = self.format_score(self.high_score)
-
         self._draw_pill(
-            "SCORE", score_text,
+            "SCORE",
+            score_text,
             cx=self.window_width - 52,
             y=6,
             value_color=self.TEXT_LIGHT,
         )
-
         is_new_best = score > 0 and score == self.high_score
         self._draw_pill(
-            "BEST", high_text,
+            "BEST",
+            high_text,
             cx=self.window_width // 2,
             y=6,
             value_color=(255, 215, 0),
@@ -364,7 +327,7 @@ class GameUI:
         )
 
     def draw_column_hover(self):
-        if self.hover_column >= 0 and not self.game_is_over:
+        if self.hover_column >= 0 and (not self.game_is_over):
             x = MARGIN + self.hover_column * (CELL_SIZE + MARGIN)
             indicator_rect = pygame.Rect(x, self.top_padding - 8, CELL_SIZE, 4)
             pygame.draw.rect(
@@ -372,46 +335,38 @@ class GameUI:
             )
 
     def draw_ghost_tile(self):
-        """Projected ghost indicating where the tile will land after rearrange."""
         if self.hover_column < 0 or self.game_is_over:
             return
-
-        # Calculate landing row based on existing non-zero blocks (rearrange packs from top)
         target_row = 0
         for r in range(GRID_LENGTH):
             if self.render_matrix[r][self.hover_column] != 0:
                 target_row += 1
-
         if target_row >= GRID_LENGTH:
-            return  # Column is full
-
+            return
         x = MARGIN + self.hover_column * (CELL_SIZE + MARGIN)
         y = self.top_padding + MARGIN + target_row * (CELL_SIZE + MARGIN)
-        
         ghost_color = self.get_cell_color(self.next_value)
         ghost_rect = pygame.Rect(0, 0, CELL_SIZE, CELL_SIZE)
-        
-        # Create a surface for transparency
         ghost_surf = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-        
-        # Faded ghost (alpha 90)
         r, g, b = ghost_color
         pygame.draw.rect(ghost_surf, (r, g, b, 90), ghost_rect, border_radius=14)
-        
-        # Subtle thin border
-        pygame.draw.rect(ghost_surf, (255, 255, 255, 100), ghost_rect, width=1, border_radius=14)
-        
-        # Ghost label
+        pygame.draw.rect(
+            ghost_surf, (255, 255, 255, 100), ghost_rect, width=1, border_radius=14
+        )
         ghost_font = self.get_font_for_value(self.next_value, CELL_SIZE)
-        ghost_label = self.render_label(ghost_font, self.next_value, self.TEXT_LIGHT, 120)
+        ghost_label = self.render_label(
+            ghost_font, self.next_value, self.TEXT_LIGHT, 120
+        )
         label_rect = ghost_label.get_rect(center=(CELL_SIZE // 2, CELL_SIZE // 2))
         ghost_surf.blit(ghost_label, label_rect)
-        
-        # Subtle 3D Shine on ghost
         shine_surf = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-        pygame.draw.rect(shine_surf, (255, 255, 255, 30), (3, 3, CELL_SIZE - 6, CELL_SIZE // 2), border_radius=10)
+        pygame.draw.rect(
+            shine_surf,
+            (255, 255, 255, 30),
+            (3, 3, CELL_SIZE - 6, CELL_SIZE // 2),
+            border_radius=10,
+        )
         ghost_surf.blit(shine_surf, (0, 0))
-        
         self.render_surface.blit(ghost_surf, (x, y))
 
     def ease_out_quint(self, t):
@@ -420,62 +375,53 @@ class GameUI:
     def ease_out_elastic(self, t):
         if t == 0 or t == 1:
             return t
-        # Slightly softer elastic bounce
         return pow(2, -10 * t) * math.sin((t * 7.5 - 0.75) * (2 * math.pi) / 3) + 1
 
     def _save_game_over_to_csv(self):
         try:
             matrix = self.game_logic.get_matrix()
-            highest_tile = max(max(row) for row in matrix) if matrix else 0
+            highest_tile = max((max(row) for row in matrix)) if matrix else 0
             score = self.game_logic.get_score()
             timestamp = datetime.utcnow().isoformat()
-
             row = {
                 "timestamp": timestamp,
                 "score": score,
                 "high_score": self.high_score,
                 "highest_tile": highest_tile,
-                "matrix": json.dumps(matrix)
+                "matrix": json.dumps(matrix),
             }
-
             file_path = "analysis/data/raw.csv"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             file_exists = os.path.exists(file_path)
-
             with open(file_path, "a", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=list(row.keys()))
                 if not file_exists:
                     writer.writeheader()
                 writer.writerow(row)
-
         except Exception as e:
             print("Failed to save game data to CSV:", e)
 
     def draw_matrix(self):
         self.render_surface.fill(self.BG_DARK)
-
-        # Ambient background stars
         for star in self.bg_stars:
             star.update()
             star.draw(self.render_surface)
-
         self.draw_header()
-
         grid_rect = pygame.Rect(
-            MARGIN - 2, self.top_padding - 2,
+            MARGIN - 2,
+            self.top_padding - 2,
             GRID_WIDTH * (CELL_SIZE + MARGIN) - MARGIN + 4,
-            GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN + 4
+            GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN + 4,
         )
         pygame.draw.rect(self.render_surface, (40, 40, 50), grid_rect, border_radius=18)
         inner_grid = pygame.Rect(
-            MARGIN, self.top_padding,
+            MARGIN,
+            self.top_padding,
             GRID_WIDTH * (CELL_SIZE + MARGIN) - MARGIN,
-            GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN
+            GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN,
         )
         self.draw_rounded_rect(self.render_surface, self.GRID_BG, inner_grid, 16)
         self.draw_column_hover()
-
-        # White column flash when user selects a column
         if self.col_flash is not None:
             flash_col, flash_start = self.col_flash
             elapsed = pygame.time.get_ticks() - flash_start
@@ -486,115 +432,98 @@ class GameUI:
                 col_h = GRID_LENGTH * (CELL_SIZE + MARGIN) - MARGIN
                 flash_surf = pygame.Surface((CELL_SIZE, col_h), pygame.SRCALPHA)
                 flash_surf.fill((255, 255, 255, alpha))
-                self.render_surface.blit(
-                    flash_surf, (fx, self.top_padding)
-                )
+                self.render_surface.blit(flash_surf, (fx, self.top_padding))
             else:
                 self.col_flash = None
-
         self.render_matrix = [row[:] for row in self.game_logic.get_matrix()]
         current_time = pygame.time.get_ticks()
-
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 rect = pygame.Rect(
                     MARGIN + col * (CELL_SIZE + MARGIN),
                     self.top_padding + MARGIN + row * (CELL_SIZE + MARGIN),
-                    CELL_SIZE, CELL_SIZE
+                    CELL_SIZE,
+                    CELL_SIZE,
                 )
-                self.draw_rounded_rect(self.render_surface, self.BASE_COLORS[0], rect, 14)
-
-        # Ghost tile will be drawn last (to show even on occupied rows)
-
+                self.draw_rounded_rect(
+                    self.render_surface, self.BASE_COLORS[0], rect, 14
+                )
         for anim in self.merge_animations[:]:
             from_col, from_row, to_col, to_row, start_time, value = anim
             elapsed = current_time - start_time
             duration = 300
-
             if elapsed >= duration:
                 self.merge_animations.remove(anim)
                 continue
-
             progress = self.ease_out_quint(elapsed / duration)
             start_x = MARGIN + from_col * (CELL_SIZE + MARGIN)
             start_y = self.top_padding + MARGIN + from_row * (CELL_SIZE + MARGIN)
             end_x = MARGIN + to_col * (CELL_SIZE + MARGIN)
             end_y = self.top_padding + MARGIN + to_row * (CELL_SIZE + MARGIN)
-
             current_x = start_x + (end_x - start_x) * progress
             current_y = start_y + (end_y - start_y) * progress
-
-            # Eased scale and alpha for a smoother "vanishing" effect
             scale = 1.0 - 0.2 * self.ease_out_quint(progress)
             alpha = int(255 * (1 - self.ease_out_quint(progress) * 0.5))
-
             scaled_size = int(CELL_SIZE * scale)
             offset = (CELL_SIZE - scaled_size) // 2
-
             rect = pygame.Rect(
-                current_x + offset, current_y + offset,
-                scaled_size, scaled_size
+                current_x + offset, current_y + offset, scaled_size, scaled_size
             )
-
             color = self.get_cell_color(value)
             temp_surface = pygame.Surface((scaled_size, scaled_size), pygame.SRCALPHA)
-            pygame.draw.rect(temp_surface, (*color, alpha),
-                           (0, 0, scaled_size, scaled_size), border_radius=int(14 * scale))
+            pygame.draw.rect(
+                temp_surface,
+                (*color, alpha),
+                (0, 0, scaled_size, scaled_size),
+                border_radius=int(14 * scale),
+            )
             self.render_surface.blit(temp_surface, rect.topleft)
-
             if scaled_size > 30:
                 font = self.get_font_for_value(value, scaled_size)
-                text_surface = self.render_label(font, value, self.TEXT_LIGHT[:3], alpha)
+                text_surface = self.render_label(
+                    font, value, self.TEXT_LIGHT[:3], alpha
+                )
                 text_rect = text_surface.get_rect(center=rect.center)
                 temp_text = pygame.Surface(text_surface.get_size(), pygame.SRCALPHA)
                 temp_text.blit(text_surface, (0, 0))
                 temp_text.set_alpha(alpha)
                 self.render_surface.blit(temp_text, text_rect)
-
         for anim in self.drop_animations[:]:
             col, current_y, target_y, value, start_time = anim
             elapsed = current_time - start_time
             duration = 220
-
             if elapsed >= duration:
                 self.drop_animations.remove(anim)
                 continue
-
             progress = self.ease_out_quint(elapsed / duration)
             y = current_y + (target_y - current_y) * progress
-
             x = MARGIN + col * (CELL_SIZE + MARGIN)
             rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-
             color = self.get_cell_color(value)
             self.draw_glow_rect(self.render_surface, color, rect, 14)
-
             font = self.get_font_for_value(value, CELL_SIZE)
             text_surface = self.render_label(font, value, self.TEXT_LIGHT)
             text_rect = text_surface.get_rect(center=rect.center)
             self.render_surface.blit(text_surface, text_rect)
-
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 value = self.render_matrix[row][col]
                 if value == 0:
                     continue
-
                 base_x = MARGIN + col * (CELL_SIZE + MARGIN)
                 base_y = self.top_padding + MARGIN + row * (CELL_SIZE + MARGIN)
-
                 scale = 1.0
-
-                # Pulse on merge
                 for anim in self.pulse_animations:
                     anim_col, anim_row, start_time, _ = anim
                     if anim_col == col and anim_row == row:
                         elapsed = current_time - start_time
                         if 0 <= elapsed < 400:
                             progress = elapsed / 400
-                            scale = max(scale, 1.0 + 0.25 * math.sin(progress * math.pi) * (1 - progress))
-
-                # Spawn pop (elastic scale-in from 0)
+                            scale = max(
+                                scale,
+                                1.0
+                                + 0.25 * math.sin(progress * math.pi) * (1 - progress),
+                            )
                 for sa in self.spawn_animations:
                     sa_col, sa_row, sa_start = sa
                     if sa_col == col and sa_row == row:
@@ -602,158 +531,155 @@ class GameUI:
                         if 0 <= elapsed < 350:
                             t = elapsed / 350
                             scale = max(scale, self.ease_out_elastic(t))
-
                 if scale != 1.0:
                     scaled_size = int(CELL_SIZE * scale)
                     offset = (CELL_SIZE - scaled_size) // 2
                     rect = pygame.Rect(
-                        base_x + offset, base_y + offset,
-                        scaled_size, scaled_size
+                        base_x + offset, base_y + offset, scaled_size, scaled_size
                     )
                 else:
                     rect = pygame.Rect(base_x, base_y, CELL_SIZE, CELL_SIZE)
-
                 color = self.get_cell_color(value)
                 self.draw_glow_rect(self.render_surface, color, rect, 14)
-
-                # Inner top-left shine for 3D depth
                 shine_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
                 pygame.draw.rect(
-                    shine_surf, (255, 255, 255, 28),
+                    shine_surf,
+                    (255, 255, 255, 28),
                     (3, 3, rect.width - 6, rect.height // 2),
-                    border_radius=10
+                    border_radius=10,
                 )
                 self.render_surface.blit(shine_surf, rect.topleft)
-
                 font = self.get_font_for_value(value, rect.width)
                 text_surface = self.render_label(font, value, self.TEXT_LIGHT)
                 text_rect = text_surface.get_rect(center=rect.center)
                 self.render_surface.blit(text_surface, text_rect)
-
-        # Draw ghost tile now so it appears on top of everything
         self.draw_ghost_tile()
-
         self.pulse_animations = [
-            a for a in self.pulse_animations
-            if current_time - a[2] < 400
+            a for a in self.pulse_animations if current_time - a[2] < 400
         ]
         self.spawn_animations = [
-            a for a in self.spawn_animations
-            if current_time - a[2] < 350
+            a for a in self.spawn_animations if current_time - a[2] < 350
         ]
-
         dt = 1 / 60.0
         self.particles = [p for p in self.particles if p.update(dt)]
         for p in self.particles:
             p.draw(self.render_surface)
-
-        # Score popups
         self.score_popups = [sp for sp in self.score_popups if sp.update(dt)]
         for sp in self.score_popups:
             sp.draw(self.render_surface, self.popup_font)
-
         self.draw_bottom_section()
         self.draw_temp_message()
         if self.is_fullscreen or self.scale_factor != 1.0:
             self.screen.fill(self.BG_DARK)
             scaled_surface = pygame.transform.smoothscale(
                 self.render_surface,
-                (int(self.base_width * self.scale_factor),
-                 int(self.base_height * self.scale_factor))
+                (
+                    int(self.base_width * self.scale_factor),
+                    int(self.base_height * self.scale_factor),
+                ),
             )
             self.screen.blit(scaled_surface, self.screen_offset)
         else:
             self.screen.blit(self.render_surface, (0, 0))
-
         pygame.display.flip()
 
     def draw_bottom_section(self):
         next_label = self.sub_font.render("NEXT", True, self.TEXT_DIM)
         label_x = (self.window_width - next_label.get_width()) // 2
-        self.render_surface.blit(next_label, (label_x, self.window_height - CELL_SIZE - 70))
-
+        self.render_surface.blit(
+            next_label, (label_x, self.window_height - CELL_SIZE - 70)
+        )
         next_rect = pygame.Rect(
             (self.window_width - CELL_SIZE) // 2,
             self.window_height - CELL_SIZE - 40,
-            CELL_SIZE, CELL_SIZE
+            CELL_SIZE,
+            CELL_SIZE,
         )
         next_color = self.get_cell_color(self.next_value)
         self.draw_glow_rect(self.render_surface, next_color, next_rect, 14)
-
-        # Inner top-left shine for 3D depth
-        shine_surf = pygame.Surface((next_rect.width, next_rect.height), pygame.SRCALPHA)
+        shine_surf = pygame.Surface(
+            (next_rect.width, next_rect.height), pygame.SRCALPHA
+        )
         pygame.draw.rect(
-            shine_surf, (255, 255, 255, 28),
+            shine_surf,
+            (255, 255, 255, 28),
             (3, 3, next_rect.width - 6, next_rect.height // 2),
-            border_radius=10
+            border_radius=10,
         )
         self.render_surface.blit(shine_surf, next_rect.topleft)
-
         font = self.get_font_for_value(self.next_value, CELL_SIZE)
         next_text = self.render_label(font, self.next_value, self.TEXT_LIGHT)
         self.render_surface.blit(next_text, next_text.get_rect(center=next_rect.center))
-
-        button_width, button_height = 120, 60
+        button_width, button_height = (120, 60)
         self.restart_button_rect = pygame.Rect(
             (self.window_width - button_width) // 12,
             self.window_height - 70 - button_height // 2,
-            button_width, button_height
+            button_width,
+            button_height,
         )
-
         is_hover = self.restart_button_rect.collidepoint(self.mouse_pos)
         button_color = self.BUTTON_HOVER if is_hover else self.BUTTON_BG
-
-        pygame.draw.rect(self.render_surface, button_color, self.restart_button_rect, border_radius=8)
-        pygame.draw.rect(self.render_surface, self.ACCENT, self.restart_button_rect, width=2, border_radius=8)
+        pygame.draw.rect(
+            self.render_surface, button_color, self.restart_button_rect, border_radius=8
+        )
+        pygame.draw.rect(
+            self.render_surface,
+            self.ACCENT,
+            self.restart_button_rect,
+            width=2,
+            border_radius=8,
+        )
         restart_text = self.button_font.render("RESTART", True, self.ACCENT)
-        self.render_surface.blit(restart_text, restart_text.get_rect(center=self.restart_button_rect.center))
+        self.render_surface.blit(
+            restart_text, restart_text.get_rect(center=self.restart_button_rect.center)
+        )
 
     def handle_events(self):
         self.mouse_pos = self.get_game_mouse_pos()
         x, y = self.mouse_pos
-        
-        # Widen the horizontal detection (any Y below header acts as column hover)
         if y >= self.top_padding - 40:
             col = (x - MARGIN) // (CELL_SIZE + MARGIN)
             self.hover_column = col if 0 <= col < GRID_WIDTH else -1
         else:
             self.hover_column = -1
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-
             elif event.type == pygame.VIDEORESIZE:
                 new_width, new_height = event.size
-                self.screen = pygame.display.set_mode((new_width, new_height), pygame.RESIZABLE)
+                self.screen = pygame.display.set_mode(
+                    (new_width, new_height), pygame.RESIZABLE
+                )
                 scale_x = new_width / self.base_width
                 scale_y = new_height / self.base_height
                 self.scale_factor = min(scale_x, scale_y)
-
                 scaled_w = int(self.base_width * self.scale_factor)
                 scaled_h = int(self.base_height * self.scale_factor)
-                self.screen_offset = ((new_width - scaled_w) // 2, (new_height - scaled_h) // 2)
-                self.is_fullscreen = (new_width != self.base_width or new_height != self.base_height)
-
+                self.screen_offset = (
+                    (new_width - scaled_w) // 2,
+                    (new_height - scaled_h) // 2,
+                )
+                self.is_fullscreen = (
+                    new_width != self.base_width or new_height != self.base_height
+                )
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset_game()
-
                 for i in range(GRID_WIDTH):
-                    if event.key == getattr(pygame, f'K_{i}'):
+                    if event.key == getattr(pygame, f"K_{i}"):
                         self.input_column = i
                         self.col_flash = (i, pygame.time.get_ticks())
-
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     click_x = (event.pos[0] - self.screen_offset[0]) / self.scale_factor
                     click_y = (event.pos[1] - self.screen_offset[1]) / self.scale_factor
-
-                    if self.restart_button_rect and self.restart_button_rect.collidepoint((click_x, click_y)):
+                    if (
+                        self.restart_button_rect
+                        and self.restart_button_rect.collidepoint((click_x, click_y))
+                    ):
                         self.reset_game()
                         return
-
                     if click_y >= self.top_padding:
                         col = int((click_x - MARGIN) // (CELL_SIZE + MARGIN))
                         if 0 <= col < GRID_WIDTH:
@@ -762,19 +688,21 @@ class GameUI:
 
     def toggle_fullscreen(self):
         self.is_fullscreen = not self.is_fullscreen
-
         if self.is_fullscreen:
             info = pygame.display.Info()
-            screen_w, screen_h = info.current_w, info.current_h
-
+            screen_w, screen_h = (info.current_w, info.current_h)
             scale_x = screen_w / self.base_width
             scale_y = screen_h / self.base_height
             self.scale_factor = min(scale_x, scale_y)
             scaled_w = int(self.base_width * self.scale_factor)
             scaled_h = int(self.base_height * self.scale_factor)
-            self.screen_offset = ((screen_w - scaled_w) // 2, (screen_h - scaled_h) // 2)
-
-            self.screen = pygame.display.set_mode((screen_w, screen_h), pygame.FULLSCREEN)
+            self.screen_offset = (
+                (screen_w - scaled_w) // 2,
+                (screen_h - scaled_h) // 2,
+            )
+            self.screen = pygame.display.set_mode(
+                (screen_w, screen_h), pygame.FULLSCREEN
+            )
         else:
             self.scale_factor = 1.0
             self.screen_offset = (0, 0)
@@ -790,7 +718,6 @@ class GameUI:
         current_score = self.game_logic.get_score()
         if current_score > self.high_score:
             self.high_score = current_score
-
         self.game_logic.reset()
         self.game_is_over = False
         self.input_column = None
@@ -805,66 +732,78 @@ class GameUI:
 
     def draw_game_over(self):
         elapsed_ms = (
-            pygame.time.get_ticks() - self.game_over_time
-            if self.game_over_time else 0
+            pygame.time.get_ticks() - self.game_over_time if self.game_over_time else 0
         )
-
-        # Backdrop Blur/Darken
         fade_alpha = min(220, int(220 * elapsed_ms / 600))
-        overlay = pygame.Surface((self.window_width, self.window_height), pygame.SRCALPHA)
+        overlay = pygame.Surface(
+            (self.window_width, self.window_height), pygame.SRCALPHA
+        )
         overlay.fill((10, 10, 15, fade_alpha))
         self.render_surface.blit(overlay, (0, 0))
-
-        # Animated window scale-up
         scale = self.ease_out_quint(min(1.0, elapsed_ms / 600))
-        win_w, win_h = int(300 * scale), int(340 * scale)
-        if win_w < 10: return
-
-        cx, cy = self.window_width // 2, self.window_height // 2
+        win_w, win_h = (int(300 * scale), int(340 * scale))
+        if win_w < 10:
+            return
+        cx, cy = (self.window_width // 2, self.window_height // 2)
         card_rect = pygame.Rect(cx - win_w // 2, cy - win_h // 2, win_w, win_h)
-        
-        # Window Shadow
         for i in range(15, 0, -1):
-            sh_rect = card_rect.inflate(i*2, i*2)
-            pygame.draw.rect(self.render_surface, (0, 0, 0, 12-i//2), sh_rect, border_radius=20+i)
-
-        # Main Card
+            sh_rect = card_rect.inflate(i * 2, i * 2)
+            pygame.draw.rect(
+                self.render_surface,
+                (0, 0, 0, 12 - i // 2),
+                sh_rect,
+                border_radius=20 + i,
+            )
         pygame.draw.rect(self.render_surface, (25, 25, 35), card_rect, border_radius=22)
-        pygame.draw.rect(self.render_surface, (70, 70, 95), card_rect, width=2, border_radius=22)
-
+        pygame.draw.rect(
+            self.render_surface, (70, 70, 95), card_rect, width=2, border_radius=22
+        )
         if scale > 0.8:
-            # Stats & Content
             go_surf = self.game_over_font.render("GAME OVER", True, (255, 70, 70))
-            self.render_surface.blit(go_surf, go_surf.get_rect(center=(cx, card_rect.top + 50)))
-
+            self.render_surface.blit(
+                go_surf, go_surf.get_rect(center=(cx, card_rect.top + 50))
+            )
             score = self.game_logic.get_score()
-            self._draw_stat("TOTAL SCORE", self.format_score(score), cx, card_rect.top + 120)
-            
+            self._draw_stat(
+                "TOTAL SCORE", self.format_score(score), cx, card_rect.top + 120
+            )
             matrix = self.game_logic.get_matrix()
-            highest = max(max(r) for r in matrix) if matrix else 0
-            self._draw_stat("HIGHEST BLOCK", self.format_value_label(highest), cx, card_rect.top + 190, color=(100, 200, 255))
-
+            highest = max((max(r) for r in matrix)) if matrix else 0
+            self._draw_stat(
+                "HIGHEST BLOCK",
+                self.format_value_label(highest),
+                cx,
+                card_rect.top + 190,
+                color=(100, 200, 255),
+            )
             if score >= self.high_score and score > 0:
                 best_surf = self.sub_font.render("★ NEW RECORD ★", True, (255, 215, 0))
-                self.render_surface.blit(best_surf, best_surf.get_rect(center=(cx, card_rect.top + 250)))
-
-            # Restart timer
-            seconds_left = max(0, 5 - (elapsed_ms // 1000))
+                self.render_surface.blit(
+                    best_surf, best_surf.get_rect(center=(cx, card_rect.top + 250))
+                )
+            seconds_left = max(0, 5 - elapsed_ms // 1000)
             timer_text = f"Bot restarting in {seconds_left}s..."
             timer_surf = self.sub_font.render(timer_text, True, self.TEXT_DIM)
-            self.render_surface.blit(timer_surf, timer_surf.get_rect(center=(cx, card_rect.bottom - 40)))
-
-        # Switch to real screen
+            self.render_surface.blit(
+                timer_surf, timer_surf.get_rect(center=(cx, card_rect.bottom - 40))
+            )
         if self.is_fullscreen or self.scale_factor != 1.0:
             self.screen.fill(self.BG_DARK)
-            scaled = pygame.transform.smoothscale(self.render_surface, (int(self.base_width * self.scale_factor), int(self.base_height * self.scale_factor)))
+            scaled = pygame.transform.smoothscale(
+                self.render_surface,
+                (
+                    int(self.base_width * self.scale_factor),
+                    int(self.base_height * self.scale_factor),
+                ),
+            )
             self.screen.blit(scaled, self.screen_offset)
         else:
             self.screen.blit(self.render_surface, (0, 0))
         pygame.display.flip()
 
     def _draw_stat(self, label, value, cx, y, color=None):
-        if not color: color = self.TEXT_LIGHT
+        if not color:
+            color = self.TEXT_LIGHT
         lbl = self.sub_font.render(label, True, self.TEXT_DIM)
         val = self.title_font.render(value, True, color)
         self.render_surface.blit(lbl, lbl.get_rect(center=(cx, y)))
@@ -875,17 +814,13 @@ class GameUI:
             return "0"
         sign = "-" if score < 0 else ""
         n = abs(int(score))
-
-        if n < 1_000_000:
+        if n < 1000000:
             return f"{sign}{n:,}"
-
         suffixes = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
         index = int(math.floor(math.log10(n) / 3))
-
         if index >= len(suffixes):
             return f"{sign}{n:.2e}"
-
-        div = 1000 ** index
+        div = 1000**index
         if n % div == 0:
             return f"{sign}{n // div}{suffixes[index]}"
         else:
@@ -895,15 +830,18 @@ class GameUI:
     def draw_temp_message(self):
         if not self.temp_message:
             return
-
-        if pygame.time.get_ticks() - self.temp_message_time > self.temp_message_duration:
+        if (
+            pygame.time.get_ticks() - self.temp_message_time
+            > self.temp_message_duration
+        ):
             self.temp_message = None
             return
-
         msg_surface = self.button_font.render(self.temp_message, True, (255, 150, 150))
         self.render_surface.blit(
             msg_surface,
-            msg_surface.get_rect(center=(15 + msg_surface.get_width() // 2, self.window_height - 25))
+            msg_surface.get_rect(
+                center=(15 + msg_surface.get_width() // 2, self.window_height - 25)
+            ),
         )
 
     def trigger_drop_animation(self, col, value):
@@ -915,73 +853,69 @@ class GameUI:
                 break
             elif row == GRID_LENGTH - 1:
                 target_row = row
-
         start_y = self.window_height - self.bottom_padding + CELL_SIZE
         target_y = self.top_padding + MARGIN + target_row * (CELL_SIZE + MARGIN)
-        self.drop_animations.append((col, start_y, target_y, value, pygame.time.get_ticks()))
+        self.drop_animations.append(
+            (col, start_y, target_y, value, pygame.time.get_ticks())
+        )
 
     def detect_and_trigger_animations(self, old_matrix, new_matrix, merged_col):
         current_time = pygame.time.get_ticks()
-
         if old_matrix is None:
             return
-
         target_cells = {}
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 old_val = old_matrix[row][col]
                 new_val = new_matrix[row][col]
-
                 if new_val != 0 and new_val > old_val:
-                    target_cells[(col, row)] = new_val
-                    
+                    target_cells[col, row] = new_val
                     if old_val != 0:
-                        # Case: Actual Merge (sound, particles, score) 
-                        # Note: Scale-up pulse removed as requested.
-                        
                         if self.merge_sound:
                             self.merge_sound.play()
-
                         self.shake_intensity = 0
-
-                        cell_center_x = MARGIN + col * (CELL_SIZE + MARGIN) + CELL_SIZE // 2
-                        cell_center_y = (self.top_padding + MARGIN
-                                         + row * (CELL_SIZE + MARGIN) + CELL_SIZE // 2)
+                        cell_center_x = (
+                            MARGIN + col * (CELL_SIZE + MARGIN) + CELL_SIZE // 2
+                        )
+                        cell_center_y = (
+                            self.top_padding
+                            + MARGIN
+                            + row * (CELL_SIZE + MARGIN)
+                            + CELL_SIZE // 2
+                        )
                         color = self.get_cell_color(new_val)
-
-                        # Particles burst
                         for _ in range(18):
                             self.particles.append(
                                 Particle(cell_center_x, cell_center_y, color)
                             )
-
-                        # Floating score popup
                         self.score_popups.append(
                             ScorePopup(cell_center_x, cell_center_y - 20, new_val)
                         )
                     else:
-                        # Case: New tile spawn (no pulse/merge effects)
                         pass
-
         for row in range(GRID_LENGTH):
             for col in range(GRID_WIDTH):
                 old_val = old_matrix[row][col]
                 new_val = new_matrix[row][col]
-
                 if old_val != 0 and new_val == 0:
                     best_target = None
-                    best_dist = float('inf')
-
+                    best_dist = float("inf")
                     for (t_col, t_row), t_val in target_cells.items():
                         if t_val >= old_val * 2:
                             dist = abs(col - t_col) + abs(row - t_row)
                             if dist < best_dist:
                                 best_dist = dist
                                 best_target = (t_col, t_row)
-
                     if best_target:
                         self.merge_animations.append(
-                            (col, row, best_target[0], best_target[1], current_time, old_val)
+                            (
+                                col,
+                                row,
+                                best_target[0],
+                                best_target[1],
+                                current_time,
+                                old_val,
+                            )
                         )
 
     def run(self):
@@ -995,50 +929,40 @@ class GameUI:
                         self.high_score = self.game_logic.get_score()
                     self.game_over_time = pygame.time.get_ticks()
                     self._save_game_over_to_csv()
-
-                if self.game_over_time and (current_time - self.game_over_time) >= 5000:
+                if self.game_over_time and current_time - self.game_over_time >= 5000:
                     self.reset_game()
                     self.clock.tick(60)
                     continue
-
                 self.draw_game_over()
                 self.handle_events()
                 self.clock.tick(60)
                 continue
-
             self.handle_events()
             show_message = False
-
             if not self.game_is_over and self.input_column is not None:
                 old_matrix = [row[:] for row in matrix]
                 self.trigger_drop_animation(self.input_column, self.next_value)
                 merged, count = self.game_logic.add_to_column(
                     self.next_value, self.input_column
                 )
-
                 if not merged:
                     show_message = True
                     self.game_logic.merge_column(self.input_column)
                     self.drop_animations = []
                 else:
                     new_matrix = self.game_logic.get_matrix()
-                    self.detect_and_trigger_animations(old_matrix, new_matrix, self.input_column)
-
+                    self.detect_and_trigger_animations(
+                        old_matrix, new_matrix, self.input_column
+                    )
                     self.next_value = self.game_logic.get_random_value()
                     self.input_column = None
-
-            if show_message and not self.game_is_over:
+            if show_message and (not self.game_is_over):
                 self.show_temp_message("Column is full!")
-
             matrix = self.game_logic.get_matrix()
             matrix = rearrange(matrix)
-            max_value = max(max(row) for row in matrix)
+            max_value = max((max(row) for row in matrix))
             remove_value = _get_remove_values(max_value)
-            _, matrix = remove_redundant(
-                matrix=matrix,
-                remove_values=remove_value
-            )
-
+            _, matrix = remove_redundant(matrix=matrix, remove_values=remove_value)
             while True:
                 old_m = [r[:] for r in matrix]
                 merged, _ = self.game_logic.merge_column()
@@ -1048,7 +972,6 @@ class GameUI:
                 self.game_logic.set_matrix(matrix)
                 new_m = self.game_logic.get_matrix()
                 self.detect_and_trigger_animations(old_m, new_m, -1)
-
             self.game_logic.set_matrix(matrix)
             self.draw_matrix()
             self.clock.tick(60)

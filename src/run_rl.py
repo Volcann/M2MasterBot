@@ -1,9 +1,5 @@
 from ui.agents.rl.rl_bot_ui import RLBotUI
 
 if __name__ == "__main__":
-    runner = RLBotUI(
-        model_path="data/rl_agent.json",
-        move_interval_ms=100,
-        fps=30
-    )
+    runner = RLBotUI(model_path="data/rl_agent.json", move_interval_ms=100, fps=30)
     runner.run()
