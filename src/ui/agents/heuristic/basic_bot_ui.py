@@ -10,8 +10,8 @@ class BasicBotUI(GameUI):
         self.bot = BasicBot()
         self.visualizer = Debugger(list(self.bot.weights.keys()))
         self.last_move_time = 0
-        self.move_delay = 200
-        self.debug = False
+        self.move_delay = 1200
+        self.debug = True
 
     def handle_events(self):
         super().handle_events()

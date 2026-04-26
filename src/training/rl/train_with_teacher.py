@@ -2,7 +2,7 @@ import os
 import argparse
 import pygame
 from core.game_logic import GameLogic
-from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
+from core.utils.core_utils import game_over, rearrange, remove_redundant, _get_remove_values
 from agents.rl.teacher import RLAgent
 from ui.game.game_ui import GameUI
 from training.debug.teacher_enhanced_visualizer import TeacherEnhancedVisualizer

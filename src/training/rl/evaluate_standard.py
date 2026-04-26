@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 from core.game_logic import GameLogic
-from core.utils.utils import game_over, rearrange
+from core.utils.core_utils import game_over, rearrange
 from agents.rl.standard import NoTeacherAgent
 
 

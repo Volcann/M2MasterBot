@@ -3,7 +3,7 @@ import argparse
 import pygame
 import numpy as np
 from core.game_logic import GameLogic
-from core.utils.utils import game_over, rearrange, remove_redundant, _get_remove_values
+from core.utils.core_utils import game_over, rearrange, remove_redundant, _get_remove_values
 from agents.rl.standard import NoTeacherAgent
 from ui.game.game_ui import GameUI
 from training.debug.no_teacher_visualizer import NoTeacherVisualizer
