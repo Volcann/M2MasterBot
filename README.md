@@ -14,6 +14,30 @@ The project utilizes a modular, decoupled architecture to ensure that game physi
 * **Feature Engineering:** Board states are translated into a six-dimensional vector. High-level agents use **feature normalization** to prevent raw score values from drowning out strategic features like smoothness.
 * **UI & Visualization:** A premium Pygame implementation that provides a "real-time MRI" of the agent's decision-making process.
 
+```mermaid
+graph TD
+    subgraph Core
+        GL[GameLogic] --> CU[Core Utils]
+    end
+
+    subgraph Agents
+        HB[Heuristic Bots]
+        RL[RL Agents]
+    end
+
+    subgraph UI
+        GUI[Game UI]
+        DPanel[Debug Panel]
+        VSystem[Visualization System]
+    end
+
+    HB --> GL
+    RL --> GL
+    GUI --> GL
+    DPanel --> HB
+    DPanel --> RL
+```
+
 ---
 
 ## 🛠️ The Feature Set
