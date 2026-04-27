@@ -6,6 +6,61 @@ A comprehensive Reinforcement Learning (RL) and Heuristic-based AI framework for
 
 ---
 
+## 🏗️ Core Architecture
+
+The project utilizes a modular, decoupled architecture to ensure that game physics, agent intelligence, and the visual interface remain isolated and interchangeable.
+
+* **Game Engine (`src/core/`):** Provides deterministic simulation. Bots can "look ahead" using `simulate_move` to evaluate potential board states before committing.
+* **Feature Engineering:** Board states are translated into a six-dimensional vector. High-level agents use **feature normalization** to prevent raw score values from drowning out strategic features like smoothness.
+* **UI & Visualization:** A premium Pygame implementation that provides a "real-time MRI" of the agent's decision-making process.
+
+---
+
+## 🛠️ The Feature Set
+
+Every agent evaluates the board using these six semantic features. In the **BasicBot** and **RLAgent**, these are scaled mathematically for stability:
+
+| Feature | Description | Mathematical Context |
+| :--- | :--- | :--- |
+| **Score** | Immediate points gained. | Logarithmic scaling: $log_2(x+1)$ |
+| **Empty Cells** | Number of open slots. | Soft-normalized (Crucial for survival) |
+| **Merge Count** | Distinct merges triggered. | Linear reward multiplier |
+| **Monotonicity** | Directional consistency. | Measures downward value gradients |
+| **Smoothness** | Adjacency similarity. | Inverse of variance $\sigma^2$ between tiles |
+| **Corner Bonus** | Strategic anchoring. | Reward for highest tile at $[0,0]$ |
+
+---
+
+## 🤖 Agent Hierarchy & Learning Strategy
+
+The framework implements a tiered approach to AI, allowing you to observe the evolution from static logic to self-taught mastery.
+
+### 🔴 Heuristic Baselines
+* **FixedLinearBot:** Uses static, hand-tuned weights. It is the control group for performance benchmarks.
+* **AdaptiveLinearBot:** Starts with uniform weights and uses a **Reward-Weighted Gradient** to adjust priorities after every move:
+    $$W_{t+1} = W_t + \alpha (r - \bar{r}) \nabla f$$
+    *(Where $\alpha$ is the learning rate and $f$ is the feature vector)*.
+
+### 🟢 The "Teacher" (`BasicBot`)
+Our most sophisticated heuristic agent. By utilizing `soft_norm` and `tanh` activations, it maintains a balanced strategy that doesn't collapse as scores reach the thousands. It serves as the primary supervisor for RL training.
+
+### 🔵 Reinforcement Learning (`RLAgent`)
+* **Self-Taught (NoTeacher):** Pure Q-learning from scratch. Often experiences **Catastrophic Failure** cycles—forgetting general survival while over-optimizing for specific high-value merges.
+* **Imitation Learning (With Teacher):** The agent begins by mimicking the `BasicBot`. As it plateaus, the teacher's influence is decayed, allowing the RL agent to discover superhuman strategies the human-designed heuristic missed.
+
+---
+
+## 📊 Premium Visualization System
+
+Designed for real-time AI research, the debug panel offers high-fidelity insights:
+
+* **Weight Sparklines:** Dynamic line graphs showing how the bot's priorities (e.g., "Empty Cells" vs. "Corner Bonus") shift during gameplay.
+* **Action-Space Heatmap:** Simultaneously visualizes the heuristic score for every column, revealing the "confidence" behind a chosen move.
+* **Metric Overlay:** Live tracking of **Epsilon** (exploration rate), **Cumulative Reward**, and **Merge Efficiency**.
+* **Micro-Animations:** Shard-based particle effects and "quintic-easing" for tile movements.
+
+---
+
 ## 🚀 Key Features
 
 ### 🧠 Multi-Strategy AI
@@ -105,21 +160,6 @@ FixedLinear  <  AdaptiveLinear  <  LinearBot  <  BasicBot  <  NoTeacher RL  <  T
 ```
 
 > **Note:** The Teacher RL wins — but only when it's been trained. A fresh, untrained RL agent will lose to even the `FixedLinearBot`. If you're unsure, just run the `BasicBot`. It's reliable out of the box.
-
----
-
-## 🛠 Feature Set
-
-Every heuristic and RL bot evaluates moves using the same six board features:
-
-| Feature | What it measures |
-|:---|:---|
-| **Score** | Immediate points gained from a move |
-| **Empty Cells** | How much open space is left on the board |
-| **Merge Count** | How many merges the move triggered |
-| **Monotonicity** | Whether values decrease in a consistent direction down each column |
-| **Smoothness** | How similar adjacent tiles are — lower variance is better |
-| **Corner Bonus** | Whether the highest tile is anchored in a corner |
 
 ---
 
