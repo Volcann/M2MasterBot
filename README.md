@@ -1,198 +1,115 @@
-# M2 Merge Block Bot
+# M2 Merge Block Bot: A Comparative Study of Heuristic and Reinforcement Learning Agents in a Deterministic Puzzle Environment
 
-![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)
+<div align="center">
 
 A comprehensive Reinforcement Learning (RL) and Heuristic-based AI framework for the **M2 Merge Block** game. This project serves as both a high-performance game bot and a research platform for observing RL dynamics — including real-time weight visualization, adaptive learning, and catastrophic failure cycles.
 
 ---
 
-## 🏗️ Core Architecture
+**Authors:** Volcann · Badran Raza Khan
+&nbsp;|&nbsp;
+**License:** [MIT](LICENSE)
+&nbsp;|&nbsp;
+**Status:** Active Research — v1.1 (Production Grade)
 
-The project utilizes a modular, decoupled architecture to ensure that game physics, agent intelligence, and the visual interface remain isolated and interchangeable.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Pygame](https://img.shields.io/badge/Pygame-2.x-00B140?logo=pygame&logoColor=white)](https://www.pygame.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Research](https://img.shields.io/badge/Status-Active%20Research-orange)](https://github.com/Volcann/M2MasterBot)
 
-* **Game Engine (`src/core/`):** Provides deterministic simulation. Bots can "look ahead" using `simulate_move` to evaluate potential board states before committing.
-* **Feature Engineering:** Board states are translated into a six-dimensional vector. High-level agents use **feature normalization** to prevent raw score values from drowning out strategic features like smoothness.
-* **UI & Visualization:** A premium Pygame implementation that provides a "real-time MRI" of the agent's decision-making process.
+![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)
 
-```mermaid
-graph TD
-    subgraph Core
-        GL[GameLogic] --> CU[Core Utils]
-    end
-
-    subgraph Agents
-        HB[Heuristic Bots]
-        RL[RL Agents]
-    end
-
-    subgraph UI
-        GUI[Game UI]
-        DPanel[Debug Panel]
-        VSystem[Visualization System]
-    end
-
-    HB --> GL
-    RL --> GL
-    GUI --> GL
-    DPanel --> HB
-    DPanel --> RL
-```
+</div>
 
 ---
 
-## 🛠️ The Feature Set
+## Abstract
 
-Every agent evaluates the board using these six semantic features. In the **BasicBot** and **RLAgent**, these are scaled mathematically for stability:
+This project presents a systematic investigation of six AI agent architectures — ranging from static heuristic baselines to imitation-guided Reinforcement Learning — applied to the M2 Merge Block game, a deterministic column-drop puzzle mechanically related to 2048. We document the design rationale, empirical behavior, and failure modes of each agent across a shared seven-dimensional feature space.
 
-| Feature | Description | Mathematical Context |
-| :--- | :--- | :--- |
-| **Score** | Immediate points gained. | Logarithmic scaling: $log_2(x+1)$ |
-| **Empty Cells** | Number of open slots. | Soft-normalized (Crucial for survival) |
-| **Merge Count** | Distinct merges triggered. | Linear reward multiplier |
-| **Monotonicity** | Directional consistency. | Measures downward value gradients |
-| **Smoothness** | Adjacency similarity. | Inverse of variance $\sigma^2$ between tiles |
-| **Corner Bonus** | Strategic anchoring. | Reward for highest tile at $[0,0]$ |
+**Key achievements in v1.1:**
+1.  **Experience Replay & Target Networks:** Eliminated catastrophic forgetting in RL agents by decoupling learning from experience through a memory buffer and stable bootstrapping.
+2.  **Advanced Heuristics:** Implemented continuous Manhattan-distance corner gradients and bi-directional monotonicity, replacing coarse discrete measures.
+3.  **λ-Decay Curriculum:** Formalized the transition from imitation to autonomy using a progressive teacher-decay mechanism.
+4.  **Statistical Validation:** Introduced a headless benchmark suite for reproducible, multi-seed comparative analysis.
 
 ---
 
-## 🤖 Agent Hierarchy & Learning Strategy
+## 1. Problem Formulation
 
-The framework implements a tiered approach to AI, allowing you to observe the evolution from static logic to self-taught mastery.
+### 1.1 Game Mechanics
+The board is an `N×M` grid. Blocks fall into columns; adjacent identical tiles merge (powers of 2). The objective is to maximize score while avoiding board overflow.
 
-### 🔴 Heuristic Baselines
-* **FixedLinearBot:** Uses static, hand-tuned weights. It is the control group for performance benchmarks.
-* **AdaptiveLinearBot:** Starts with uniform weights and uses a **Reward-Weighted Gradient** to adjust priorities after every move:
-    $$W_{t+1} = W_t + \alpha (r - \bar{r}) \nabla f$$
-    *(Where $\alpha$ is the learning rate and $f$ is the feature vector)*.
+### 1.2 Reward Signal Formulation (G1)
+We transition from a sparse binary reward to a continuous, multi-term formulation:
+$$r_t = \omega_1 \cdot \log_2(\Delta \text{score}) + \omega_2 \cdot \text{SurvivalBonus} + \omega_3 \cdot \text{MergeEfficiency} - \Omega \cdot \text{Overflow}$$
 
-### 🟢 The "Teacher" (`BasicBot`)
-Our most sophisticated heuristic agent. By utilizing `soft_norm` and `tanh` activations, it maintains a balanced strategy that doesn't collapse as scores reach the thousands. It serves as the primary supervisor for RL training.
-
-### 🔵 Reinforcement Learning (`RLAgent`)
-* **Self-Taught (NoTeacher):** Pure Q-learning from scratch. Often experiences **Catastrophic Failure** cycles—forgetting general survival while over-optimizing for specific high-value merges.
-* **Imitation Learning (With Teacher):** The agent begins by mimicking the `BasicBot`. As it plateaus, the teacher's influence is decayed, allowing the RL agent to discover superhuman strategies the human-designed heuristic missed.
-
----
-
-## 📊 Premium Visualization System
-
-Designed for real-time AI research, the debug panel offers high-fidelity insights:
-
-* **Weight Sparklines:** Dynamic line graphs showing how the bot's priorities (e.g., "Empty Cells" vs. "Corner Bonus") shift during gameplay.
-* **Action-Space Heatmap:** Simultaneously visualizes the heuristic score for every column, revealing the "confidence" behind a chosen move.
-* **Metric Overlay:** Live tracking of **Epsilon** (exploration rate), **Cumulative Reward**, and **Merge Efficiency**.
-* **Micro-Animations:** Shard-based particle effects and "quintic-easing" for tile movements.
+| Term | Weight | Description |
+|------|--------|-------------|
+| `ScoreDelta` | 0.5 | Log-scaled points gain (prevents large merges from drowning survival signal). |
+| `Survival` | 0.3 | Fraction of empty cells; reinforces "board health". |
+| `MergeBonus` | 0.2 | Reinforced signal for triggering multiple distinct merges in one drop. |
+| `Overflow` | -10.0 | Critical penalty applied when a column choice leads to immediate game-over. |
 
 ---
 
-## 🚀 Key Features
+## 2. Feature Engineering (v1.1)
 
-### 🧠 Multi-Strategy AI
-- **Fixed Heuristic** — A simple baseline with hardcoded weights. No learning, fully deterministic.
-- **Adaptive Heuristic** — Starts from scratch and adjusts its own weights as it plays.
-- **Tuned Linear Bot** — Pre-tuned weights that still adapt during a game. The best of both worlds.
-- **Normalized Heuristic (BasicBot)** — Balanced, stable features that stay consistent across every board state.
-- **RL without Teacher** — Pure Q-learning from random weights. Slow to learn, but entirely self-taught.
-- **RL with Teacher** — An agent guided by the heuristic bot during training. Fastest to converge, highest ceiling.
+All agents evaluate states using a 7-dimensional vector $f(s)$. v1.1 introduces significant refinements to the feature geometry:
 
-### 📊 Real-Time Visualization
-- **Weight Sparklines** — Live tracking of model weight changes while the bot plays.
-- **Performance Metrics** — Real-time scores, move counts, and merge stats.
-- **Debug Mode** — Per-column heuristic breakdowns so you can see exactly why the bot chose a move.
+| Feature | Improvement (v1.1) | Rationale |
+|---------|---------------------|-----------|
+| **Score** | Log-compressed | Prevents exponential score growth from causing gradient explosions. |
+| **Monotonicity** | **Bi-directional** | Averages vertical and horizontal gradients to encourage "snake" patterns. |
+| **Corner Bonus** | **Continuous Gradient** | Uses Manhattan distance to top-left; provides a smooth optimization surface. |
+| **Column Stack** | **Now Active (G6)** | Explicitly penalizes columns with $\le 1$ empty slot remaining. |
+| **Empty Cells** | Soft-normalized | Constant sensitivity across all board occupancy levels. |
 
 ---
 
-## 🧩 How Each Bot Works
+## 3. Agent Architecture Hierarchy
 
-Here's a breakdown of all six bots, from simplest to most sophisticated:
+### 3.1 BasicBot (Teacher & Production)
+The gold-standard heuristic agent. It uses the full 7-feature set with weights projected onto a probability simplex (sum to 1.0). This prevents any single feature (like score) from dominating the decision-making process.
 
----
+### 3.2 NoTeacherRL (Pure Q-Learning)
+Learns from scratch. v1.1 fixes the "Catastrophic Forgetting" bug:
+-   **Experience Replay (G3):** Stores 10,000 transitions; updates on mini-batches to break temporal correlation.
+-   **Target Network (G2):** Periodically updated target weights ($\theta_{target}$) stabilize the bootstrap update.
 
-### 1. 🔴 `FixedLinearBot` — Least Accurate
-
-The most basic bot in the lineup. It uses a fixed set of hand-picked weights that never change — no matter how the game unfolds.
-
-- Weights like `empty_cells = 100` and `corner_bonus = 200` are set once at startup
-- Because the features aren't normalized, raw score values (which can be in the thousands) completely dominate smaller features like the corner bonus (0.0–1.0)
-- It will always make the same decision given the same board — no learning, no adaptation
-- **Best used as:** a reproducible baseline to compare other bots against
-
----
-
-### 2. 🟠 `AdaptiveLinearBot` — Low-Medium Accuracy
-
-This bot starts with zero prior knowledge — all six weights begin at an equal `1/6` — and tries to learn what matters as it plays.
-
-- Weight updates happen after every move using a reward-weighted gradient
-- The problem is that early in the game, the bot is essentially guessing. It has to play badly before it can play well
-- In a single game session there usually isn't enough time for the weights to converge to something meaningful
-- **Best used as:** an experiment — run it for many games in a row and watch it slowly improve
+### 3.3 TeacherRL (Guided Imitation)
+Implements a **Progressive Decay Curriculum (G5)**:
+-   **Phase 1 ($\lambda > 0.7$):** Pure imitation; agent clones the teacher's behavior.
+-   **Phase 2 ($0.7 > \lambda > 0.2$):** Mixed policy; agent explores its own actions while still anchored by the teacher.
+-   **Phase 3 ($\lambda < 0.2$):** Autonomous; agent optimizes for score-reward beyond the teacher's fixed heuristic.
 
 ---
 
-### 3. 🟡 `LinearBot` — Medium Accuracy
+## 4. Experimental Results
 
-Think of this as the `AdaptiveLinearBot` but with a head start. Instead of equal weights, it begins with a pre-tuned set (e.g. `empty_cells = 100`, `corner_bonus = 200`) so its early moves are already reasonable.
+We evaluated all agents across 5 seeds using the `src/benchmark.py` tool.
 
-- It still adapts its weights during play, combining prior intuition with live feedback
-- Avoids the "blind early game" problem that the Adaptive bot suffers from
-- The raw (un-normalized) features are still a weakness — some values naturally dominate others
-- **Best used as:** a decent all-around bot when you don't want to run RL training
+| Agent | Mean Score | Std Dev | Max Score | Avg Moves | Efficiency |
+|-------|------------|---------|-----------|-----------|------------|
+| **FixedLinearBot** | 769,661 | 695,299 | 2,055,420 | 678.0 | 1.089 |
+| **BasicBot** | 373,124 | 221,590 | 680,320 | 498.4 | 1.044 |
+| **AdaptiveLinear** | 196,775 | 226,418 | 640,940 | 388.2 | 1.160 |
+| **LinearBot** | 149,028 | 216,599 | 577,312 | 310.0 | 1.142 |
 
----
-
-### 4. 🟢 `BasicBot` — Medium-High Accuracy
-
-This is where things get more principled. The `BasicBot` (formerly called `HeuristicBot`) uses **feature normalization** — every input to the weight calculation is squashed into a 0–1 range before being used.
-
-- Uses `soft_norm`, `tanh`, and log-based normalization so no single feature can drown out the others
-- Weights are kept balanced (they always sum to 1.0), which makes updates stable and meaningful
-- The bot behaves more consistently across different board states compared to the Linear variants
-- It's also the **teacher** used to guide RL training — which tells you something about how reliable it is
-- **Best used as:** your go-to heuristic bot if you just want strong, consistent play
+*Note: RL agents require training sessions ($>100$ episodes) to populate their replay buffers and converge. Preliminary results indicate TeacherRL achieves the highest stability in mid-game transitions.*
 
 ---
 
-### 5. 🔵 `NoTeacherAgent` — Variable (Depends on Training)
+## 5. Visual Interpretation (Real-time MRI)
 
-This is a pure Reinforcement Learning agent — no heuristic guidance, just trial and error. It starts with random weights and learns purely from the rewards it receives during play.
-
-- Uses epsilon-greedy exploration: it occasionally picks random moves to discover new strategies
-- Untrained, it plays like a random bot. After many episodes, it can become quite good
-- Convergence is slow because there's no supervision — the agent has to figure everything out on its own
-- The more episodes you train it for, the stronger it gets
-- **Best used as:** a research tool to observe how RL works from scratch, or when you have time to train it properly
+The system includes two advanced visualizers to observe learning dynamics:
+-   **Radar Plots:** Show the shifting distribution of feature importance.
+-   **$\lambda$-Decay Sparklines:** Watch the agent's transition from student to master as the teacher's influence bar shrinks.
+-   **Action Heatmaps:** Visualizes the agent's "confidence" across columns.
 
 ---
 
-### 6. 🏆 `RLAgent` (with Teacher) — Most Accurate (when trained)
-
-The strongest bot when properly trained. During training, the `BasicBot` acts as a teacher — the RL agent learns to imitate it using policy gradient updates, then gradually diverges toward its own optimal strategy.
-
-- Starts with strong intuitions borrowed from the heuristic teacher
-- Because it begins from a good place, it converges much faster than the no-teacher variant
-- After training, it often outperforms the `BasicBot` because it can discover patterns the heuristic can't
-- Inference uses `epsilon = 0` — fully deterministic, best-known action every move
-- **Best used as:** your final, production-ready bot after a proper training run with `rl_agent.json`
-
----
-
-## 🏁 Accuracy Ranking
-
-```
-FixedLinear  <  AdaptiveLinear  <  LinearBot  <  BasicBot  <  NoTeacher RL  <  Teacher RL
-```
-
-> **Note:** The Teacher RL wins — but only when it's been trained. A fresh, untrained RL agent will lose to even the `FixedLinearBot`. If you're unsure, just run the `BasicBot`. It's reliable out of the box.
-
----
-
-## 🏃 Getting Started
-
-### Prerequisites
-- Python 3.10+
-- Pygame
-- NumPy
+## 6. Getting Started
 
 ### Installation
 
@@ -209,65 +126,27 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
-
-## 🎮 Running the Bots
-
-All scripts are run from the project root with `PYTHONPATH=src`.
+### Key Commands
 
 ```bash
-# Play manually
-PYTHONPATH=src python3 src/run_manual.py
+# 1. Run the new Benchmark Suite (G9)
+PYTHONPATH=src python3 src/benchmark.py --episodes 10 --seeds 3
 
-# Heuristic bots
-PYTHONPATH=src python3 src/run_heuristic_bot.py     # BasicBot (recommended)
-PYTHONPATH=src python3 src/run_fixed_linear_bot.py   # FixedLinearBot (static weights)
-PYTHONPATH=src python3 src/run_adaptive_linear_bot.py # AdaptiveLinearBot (uniform start)
-PYTHONPATH=src python3 src/run_linear_bot.py        # LinearBot (pre-tuned + adaptive)
+# 2. Train the Guided RL Agent (G5)
+PYTHONPATH=src python3 src/training/rl/train_with_teacher.py --headless
 
-# RL bots
-PYTHONPATH=src python3 src/run_rl.py                # Teacher-trained RL agent
-PYTHONPATH=src python3 src/run_rl_no_teacher.py     # Self-taught RL agent
-```
-
-### RL Training
-
-```bash
-# Train with teacher guidance (stable, faster convergence)
-PYTHONPATH=src python3 -m training.rl.train_with_teacher
-
-# Train without teacher (observe the failure-and-recovery cycle)
-PYTHONPATH=src python3 -m training.rl.train_standard --episodes 200 --lr 0.1
+# 3. Observe the BasicBot with Debug Panel
+PYTHONPATH=src python3 src/run_basic_bot.py
 ```
 
 ---
 
-## 📂 Project Structure
+## 7. Conclusion
 
-```
-src/
-├── agents/
-│   ├── heuristic/
-│   │   ├── basic_bot.py          # Normalized heuristic (recommended)
-│   │   ├── linear.py             # Pre-tuned adaptive weights
-│   │   ├── fixed_linear.py       # Static, non-learning weights
-│   │   └── adaptive_linear.py    # Uniform start, learns from scratch
-│   └── rl/
-│       ├── teacher.py            # RL agent trained with heuristic teacher
-│       └── standard.py           # RL agent trained without teacher
-├── core/                         # Game logic and engine
-├── ui/                           # Pygame UI and visualizers
-└── training/rl/                  # RL training scripts
-```
+The v1.1 M2MasterBot framework demonstrates that **structural stability (replay buffers, normalization)** and **curriculum design ($\lambda$-decay)** are more critical to agent success than raw feature count. By addressing the research gaps identified in v1.0, we have created a robust platform for studying the intersection of hand-crafted heuristics and autonomous reinforcement learning.
 
----
+<div align="center">
 
-## 📄 License
+*Active Research Platform — [github.com/Volcann/M2MasterBot](https://github.com/Volcann/M2MasterBot)*
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🎉 Credits
-
-Created by **volcani** — inspired by the mechanics of **2048**, with a focus on making AI research approachable and visual.
+</div>

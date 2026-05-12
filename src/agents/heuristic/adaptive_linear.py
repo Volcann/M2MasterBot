@@ -7,12 +7,13 @@ from core.utils.core_utils import rearrange, merge_column
 class AdaptiveLinearBot:
     def __init__(self):
         self.weights = {
-            "score": 1.0 / 6.0,
-            "empty_cells": 1.0 / 6.0,
-            "merges": 1.0 / 6.0,
-            "monotonicity": 1.0 / 6.0,
-            "smoothness": 1.0 / 6.0,
-            "corner_bonus": 1.0 / 6.0,
+            "score": 1.0 / 7.0,
+            "empty_cells": 1.0 / 7.0,
+            "merges": 1.0 / 7.0,
+            "monotonicity": 1.0 / 7.0,
+            "smoothness": 1.0 / 7.0,
+            "corner_bonus": 1.0 / 7.0,
+            "stack": 1.0 / 7.0,
         }
         self.learning_rate = 0.05
 
@@ -31,7 +32,12 @@ class AdaptiveLinearBot:
             "monotonicity": float(self.calculate_monotonicity(matrix)),
             "smoothness": float(self.calculate_smoothness(matrix)),
             "corner_bonus": float(self.corner_bonus(column, matrix)),
+            "stack": float(self.norm_stack(matrix)),
         }
+
+    def norm_stack(self, matrix):
+        raw = self.column_stack_penalty(matrix)
+        return max(-1.0, raw / (100.0 * GRID_WIDTH))
 
     def update_weights(self, features, reward):
         if reward <= 0:
@@ -88,21 +94,17 @@ class AdaptiveLinearBot:
                 penalty -= 100
         return penalty
 
-    def corner_bonus(self, column, matrix):
-        max_val = 0
-        max_pos = (0, 0)
-        for row in range(GRID_LENGTH):
-            for column in range(GRID_WIDTH):
-                value = matrix[row][column]
-                if value > max_val:
-                    max_val = value
-                    max_pos = (row, column)
-        row, column = max_pos
-        if (row, column) == (0, 0):
-            return 1.0
-        if row == 0:
-            return 0.7
-        return 0.0
+    def corner_bonus(self, _column, matrix):
+        max_val, max_pos = 0, (0, 0)
+        for r in range(GRID_LENGTH):
+            for c in range(GRID_WIDTH):
+                if matrix[r][c] > max_val:
+                    max_val = matrix[r][c]
+                    max_pos = (r, c)
+        row, col = max_pos
+        max_dist = (GRID_LENGTH - 1) + (GRID_WIDTH - 1)
+        dist = row + col
+        return 1.0 - (dist / max_dist)
 
     def count_empty_cells(self, matrix):
         count_zero = 0
@@ -113,24 +115,31 @@ class AdaptiveLinearBot:
         return count_zero
 
     def calculate_monotonicity(self, matrix):
-        score = 0
-        comparisons = 0
-        for column in range(GRID_WIDTH):
+        return (self._mono_vertical(matrix) + self._mono_horizontal(matrix)) / 2.0
+
+    def _mono_vertical(self, matrix):
+        score, comparisons = 0, 0
+        for col in range(GRID_WIDTH):
             for row in range(GRID_LENGTH - 1):
-                current_value = matrix[row][column]
-                next_value = matrix[row + 1][column]
-                if current_value >= next_value:
+                cur, nxt = matrix[row][col], matrix[row + 1][col]
+                if cur >= nxt:
                     score += 1
-                else:
-                    score -= (
-                        math.log2(next_value) - math.log2(current_value)
-                        if current_value > 0 and next_value > 0
-                        else 0
-                    )
+                elif cur > 0 and nxt > 0:
+                    score -= math.log2(nxt) - math.log2(cur)
                 comparisons += 1
-        if comparisons == 0:
-            return 0.0
-        return score / comparisons
+        return score / comparisons if comparisons else 0.0
+
+    def _mono_horizontal(self, matrix):
+        score, comparisons = 0, 0
+        for row in range(GRID_LENGTH):
+            for col in range(GRID_WIDTH - 1):
+                cur, nxt = matrix[row][col], matrix[row][col + 1]
+                if cur >= nxt:
+                    score += 1
+                elif cur > 0 and nxt > 0:
+                    score -= math.log2(nxt) - math.log2(cur)
+                comparisons += 1
+        return score / comparisons if comparisons else 0.0
 
     def calculate_smoothness(self, matrix):
         smoothness = 0
@@ -147,8 +156,6 @@ class AdaptiveLinearBot:
                         neighbor = math.log2(matrix[row + 1][column])
                         smoothness += abs(value - neighbor)
                         comparisons += 1
-                else:
-                    continue
         if comparisons == 0:
             return 0.0
         return smoothness / comparisons

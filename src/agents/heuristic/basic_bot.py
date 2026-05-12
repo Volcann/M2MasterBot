@@ -7,38 +7,78 @@ from core.utils.core_utils import rearrange, merge_column
 class BasicBot:
     def __init__(self):
         self.weights = {
-            "score": 0.15,
-            "empty": 0.3,
-            "merge": 0.1,
-            "mono": 0.15,
+            "score":  0.10,
+            "empty":  0.25,
+            "merge":  0.10,
+            "mono":   0.15,
             "smooth": 0.15,
             "corner": 0.15,
+            "stack":  0.10,
         }
         self.learning_rate = 0.05
 
     def evaluate_board(self, column, matrix, move_score, merge_count):
         features = self.compute_features(column, matrix, move_score, merge_count)
-        total = 0
-        for key, value in features.items():
-            total += self.weights[key] * value
-        return total
+        return sum(self.weights[k] * features[k] for k in self.weights)
+
+    def compute_features(self, column, matrix, move_score, merge_count):
+        return {
+            "score":  self.norm_score(move_score),
+            "empty":  self.norm_empty(matrix),
+            "merge":  self.norm_merge(merge_count),
+            "mono":   self.norm_monotonicity(matrix),
+            "smooth": self.norm_smoothness(matrix),
+            "corner": self.corner_bonus(column, matrix),
+            "stack":  self.norm_stack(matrix),
+        }
+
+    def update_weights(self, features, reward):
+        if reward <= 0:
+            return
+        for key in self.weights:
+            self.weights[key] += self.learning_rate * reward * features[key]
+        total = sum(self.weights.values())
+        if total > 0:
+            for key in self.weights:
+                self.weights[key] /= total
+
+    def solve(self, matrix, next_value, debugger=None):
+        best_score = -float("inf")
+        best_column = 0
+        move_summaries = []
+        for col in range(GRID_WIDTH):
+            temp_matrix = copy.deepcopy(matrix)
+            score_gain, distinct_merges = self.simulate_move(temp_matrix, col, next_value)
+            if score_gain == -1:
+                continue
+            features = self.compute_features(col, temp_matrix, score_gain, distinct_merges)
+            heuristic_score = sum(self.weights[k] * features[k] for k in self.weights)
+            self.update_weights(features, self.norm_score(score_gain))
+            move_summaries.append(
+                {"col": col, "score": score_gain, "h_score": heuristic_score, "merges": distinct_merges}
+            )
+            if debugger:
+                impact = {k: self.weights[k] * features[k] for k in self.weights}
+                debugger.update(col, impact, heuristic_score)
+            if heuristic_score > best_score:
+                best_score = heuristic_score
+                best_column = col
+        if debugger:
+            debugger.draw_summary(move_summaries, best_column)
+        return best_column
+
+    def soft_norm(self, x, scale):
+        return x / (x + scale)
 
     def norm_score(self, score):
         if score <= 0:
             return 0.0
         return self.soft_norm(math.log2(score + 1), scale=6.0)
 
-    def soft_norm(self, x, scale):
-        return x / (x + scale)
-
     def norm_empty(self, matrix):
         empties = sum(
-            (
-                1
-                for r in range(GRID_LENGTH)
-                for c in range(GRID_WIDTH)
-                if matrix[r][c] == 0
-            )
+            1 for r in range(GRID_LENGTH) for c in range(GRID_WIDTH)
+            if matrix[r][c] == 0
         )
         return self.soft_norm(empties, scale=GRID_WIDTH)
 
@@ -53,134 +93,83 @@ class BasicBot:
         raw = self.calculate_smoothness(matrix)
         return 1.0 - self.soft_norm(raw, scale=2.0)
 
-    def compute_features(self, column, matrix, move_score, merge_count):
-        return {
-            "score": self.norm_score(move_score),
-            "empty": self.norm_empty(matrix),
-            "merge": self.norm_merge(merge_count),
-            "mono": self.norm_monotonicity(matrix),
-            "smooth": self.norm_smoothness(matrix),
-            "corner": self.corner_bonus(column, matrix),
-        }
-
-    def update_weights(self, features, reward):
-        if reward <= 0:
-            return
-        for key in self.weights:
-            self.weights[key] += self.learning_rate * reward * features[key]
-        total = sum(self.weights.values())
-        for key in self.weights:
-            self.weights[key] /= total
-
-    def solve(self, matrix, next_value, debugger=None):
-        best_score = -float("inf")
-        best_column = 0
-        move_summaries = []
-        for column in range(GRID_WIDTH):
-            temp_matrix = copy.deepcopy(matrix)
-            score_gain, distinct_merges = self.simulate_move(
-                temp_matrix, column, next_value
-            )
-            if score_gain == -1:
-                continue
-            features = self.compute_features(
-                column, temp_matrix, score_gain, distinct_merges
-            )
-            heuristic_score = sum((self.weights[k] * features[k] for k in self.weights))
-            self.update_weights(features, self.norm_score(score_gain))
-            move_summaries.append(
-                {
-                    "col": column,
-                    "score": score_gain,
-                    "h_score": heuristic_score,
-                    "merges": distinct_merges,
-                }
-            )
-            if debugger:
-                impact = {k: self.weights[k] * features[k] for k in self.weights}
-                debugger.update(column, impact, heuristic_score)
-            if heuristic_score > best_score:
-                best_score = heuristic_score
-                best_column = column
-        if debugger:
-            debugger.draw_summary(move_summaries, best_column)
-        return best_column
+    def norm_stack(self, matrix):
+        raw = self.column_stack_penalty(matrix)
+        return max(-1.0, raw / (100.0 * GRID_WIDTH))
 
     def column_stack_penalty(self, matrix):
         penalty = 0
         threshold = 1
-        for column in range(GRID_WIDTH):
-            empty_count = sum(
-                (1 for row in range(GRID_LENGTH) if matrix[row][column] == 0)
-            )
+        for col in range(GRID_WIDTH):
+            empty_count = sum(1 for row in range(GRID_LENGTH) if matrix[row][col] == 0)
             if empty_count <= threshold:
                 penalty -= 100
         return penalty
 
-    def corner_bonus(self, column, matrix):
-        max_val = 0
-        max_pos = (0, 0)
-        for row in range(GRID_LENGTH):
-            for column in range(GRID_WIDTH):
-                value = matrix[row][column]
-                if value > max_val:
-                    max_val = value
-                    max_pos = (row, column)
-        row, column = max_pos
-        if (row, column) == (0, 0):
-            return 1.0
-        if row == 0:
-            return 0.7
-        return 0.0
+    def corner_bonus(self, _column, matrix):
+        max_val, max_pos = 0, (0, 0)
+        for r in range(GRID_LENGTH):
+            for c in range(GRID_WIDTH):
+                if matrix[r][c] > max_val:
+                    max_val = matrix[r][c]
+                    max_pos = (r, c)
+        row, col = max_pos
+        max_dist = (GRID_LENGTH - 1) + (GRID_WIDTH - 1)
+        dist = row + col
+        return 1.0 - (dist / max_dist)
 
     def count_empty_cells(self, matrix):
-        count_zero = 0
-        for row in range(GRID_LENGTH):
-            for column in range(GRID_WIDTH):
-                if matrix[row][column] == 0:
-                    count_zero += 1
-        return count_zero
+        return sum(
+            1 for r in range(GRID_LENGTH) for c in range(GRID_WIDTH)
+            if matrix[r][c] == 0
+        )
 
     def calculate_monotonicity(self, matrix):
-        score = 0
-        comparisons = 0
-        for column in range(GRID_WIDTH):
+        v = self._mono_vertical(matrix)
+        h = self._mono_horizontal(matrix)
+        return (v + h) / 2.0
+
+    def _mono_vertical(self, matrix):
+        score, comparisons = 0, 0
+        for col in range(GRID_WIDTH):
             for row in range(GRID_LENGTH - 1):
-                current_value = matrix[row][column]
-                next_value = matrix[row + 1][column]
-                if current_value >= next_value:
+                cur = matrix[row][col]
+                nxt = matrix[row + 1][col]
+                if cur >= nxt:
                     score += 1
                 else:
-                    score -= (
-                        math.log2(next_value) - math.log2(current_value)
-                        if current_value > 0 and next_value > 0
-                        else 0
-                    )
+                    if cur > 0 and nxt > 0:
+                        score -= math.log2(nxt) - math.log2(cur)
                 comparisons += 1
-        if comparisons == 0:
-            return 0.0
-        return score / comparisons
+        return score / comparisons if comparisons else 0.0
+
+    def _mono_horizontal(self, matrix):
+        score, comparisons = 0, 0
+        for row in range(GRID_LENGTH):
+            for col in range(GRID_WIDTH - 1):
+                cur = matrix[row][col]
+                nxt = matrix[row][col + 1]
+                if cur >= nxt:
+                    score += 1
+                else:
+                    if cur > 0 and nxt > 0:
+                        score -= math.log2(nxt) - math.log2(cur)
+                comparisons += 1
+        return score / comparisons if comparisons else 0.0
 
     def calculate_smoothness(self, matrix):
-        smoothness = 0
-        comparisons = 0
+        smoothness, comparisons = 0, 0
         for row in range(GRID_LENGTH):
-            for column in range(GRID_WIDTH):
-                if matrix[row][column] > 0:
-                    value = math.log2(matrix[row][column])
-                    if column + 1 < GRID_WIDTH and matrix[row][column + 1] > 0:
-                        neighbor = math.log2(matrix[row][column + 1])
-                        smoothness += abs(value - neighbor)
+            for col in range(GRID_WIDTH):
+                if matrix[row][col] > 0:
+                    value = math.log2(matrix[row][col])
+                    if col + 1 < GRID_WIDTH and matrix[row][col + 1] > 0:
+                        smoothness += abs(value - math.log2(matrix[row][col + 1]))
                         comparisons += 1
-                    if row + 1 < GRID_LENGTH and matrix[row + 1][column] > 0:
-                        neighbor = math.log2(matrix[row + 1][column])
-                        smoothness += abs(value - neighbor)
+                    if row + 1 < GRID_LENGTH and matrix[row + 1][col] > 0:
+                        smoothness += abs(value - math.log2(matrix[row + 1][col]))
                         comparisons += 1
-                else:
-                    continue
-        if comparisons == 0:
-            return 0.0
-        return smoothness / comparisons
+        return smoothness / comparisons if comparisons else 0.0
 
     def simulate_move(self, matrix, column, value):
         index = 0

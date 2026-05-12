@@ -14,7 +14,7 @@ GOLD = "#ffd740"
 RED = "#ff5252"
 TEXT = "#e0e8ff"
 DIM = "#4a5568"
-FEATURE_COLORS = ["#ff6b6b", "#ffa94d", "#ffe066", "#69db7c", "#4dabf7", "#da77f2"]
+FEATURE_COLORS = ["#ff6b6b", "#ffa94d", "#ffe066", "#69db7c", "#4dabf7", "#da77f2", "#adb5bd", "#94d82d"]
 
 
 class Debugger:
