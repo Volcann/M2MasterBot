@@ -49,8 +49,14 @@ class NoTeacherAgent:
         return feature_vectors
 
     def select_action(
-        self, matrix: List[List[int]], next_value: int, epsilon: float = 0.1
+        self,
+        matrix: List[List[int]],
+        next_value: int,
+        epsilon: float = 0.1,
+        deterministic: bool = False,
     ) -> int:
+        if deterministic:
+            epsilon = 0.0
         feature_vectors = self._get_action_space_features(matrix, next_value)
         logits = np.array(
             [np.dot(self.theta, v) if v is not None else -1e9 for v in feature_vectors]
