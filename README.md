@@ -2,6 +2,10 @@
 
 <div align="center">
 
+A comprehensive Reinforcement Learning (RL) and Heuristic-based AI framework for the **M2 Merge Block** game. This project serves as both a high-performance game bot and a research platform for observing RL dynamics — including real-time weight visualization, adaptive learning, and catastrophic failure cycles.
+
+---
+
 **Authors:** Volcann · Badran Raza Khan
 &nbsp;|&nbsp;
 **License:** [MIT](LICENSE)
@@ -13,9 +17,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Research](https://img.shields.io/badge/Status-Active%20Research-orange)](https://github.com/Volcann/M2MasterBot)
 
-</div>
-
 ![M2 Merge Block Game](https://github.com/Volcann/M2MasterBot/blob/92beb45387ec467a4a7d8915338a2f26dbbdc424/assets/image.png)
+
+</div>
 
 ---
 
@@ -108,11 +112,22 @@ The system includes two advanced visualizers to observe learning dynamics:
 ## 6. Getting Started
 
 ### Installation
+
 ```bash
+# Clone the repo
+git clone https://github.com/Volcann/M2MasterBot.git
+cd M2MasterBot
+
+# Set up virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
 ### Key Commands
+
 ```bash
 # 1. Run the new Benchmark Suite (G9)
 PYTHONPATH=src python3 src/benchmark.py --episodes 10 --seeds 3
@@ -130,8 +145,8 @@ PYTHONPATH=src python3 src/run_basic_bot.py
 
 The v1.1 M2MasterBot framework demonstrates that **structural stability (replay buffers, normalization)** and **curriculum design ($\lambda$-decay)** are more critical to agent success than raw feature count. By addressing the research gaps identified in v1.0, we have created a robust platform for studying the intersection of hand-crafted heuristics and autonomous reinforcement learning.
 
----
-
 <div align="center">
+
 *Active Research Platform — [github.com/Volcann/M2MasterBot](https://github.com/Volcann/M2MasterBot)*
+
 </div>
